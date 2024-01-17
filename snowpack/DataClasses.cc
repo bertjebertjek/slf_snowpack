@@ -2393,8 +2393,8 @@ void SnowStation::initialize(const SN_SNOWSOIL_DATA& SSdata, const size_t& i_sec
 			Ndata[n].u = 0.;
 			Ndata[n].f = 0.;
 			Ndata[n].udot = 0.;
-			Ndata[n].S_n = INIT_STABILITY;   // Static natural stability index
-			Ndata[n].S_s = INIT_STABILITY;   // Alternative Stability Index (skier stability)
+			Ndata[n].S_n = IOUtils::nodata;   // Static natural stability index
+			Ndata[n].S_s = IOUtils::nodata;   // Alternative Stability Index (skier stability)
 		}
 	}
 
@@ -2464,7 +2464,7 @@ void SnowStation::initialize(const SN_SNOWSOIL_DATA& SSdata, const size_t& i_sec
 			Edata[e].salinity = SSdata.Ldata[ll].salinity;
 			Edata[e].h = SSdata.Ldata[ll].h;
 			Edata[e].dsm = SSdata.Ldata[ll].dsm;
-			Edata[e].S_dr = INIT_STABILITY;
+			Edata[e].S_dr = IOUtils::nodata;
 			Edata[e].hard = IOUtils::nodata;
 			Edata[e].M = Edata[e].Rho * Edata[e].L0;
 			assert(Edata[e].M >= (-Constants::eps2)); //mass must be positive
