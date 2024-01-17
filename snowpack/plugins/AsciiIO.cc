@@ -1121,7 +1121,7 @@ void AsciiIO::writeProfilePro(const mio::Date& i_date, const SnowStation& Xdata,
 	}
 	// 0530: position (cm) and minimum stability indices
 	fout << "\n0530,8";
-	fout << "," << std::fixed << +Xdata.S_class1 << "," << +Xdata.S_class2; //force printing type char as numerica value
+	fout << "," << std::fixed << +Xdata.S_class1 << "," << +Xdata.S_class2; //force printing type char as numerical value
 	fout << "," << std::setprecision(1) << M_TO_CM(Xdata.z_S_d/cos_sl) << "," << std::setprecision(2) << Xdata.S_d;
 	fout << "," << std::fixed << std::setprecision(1) << M_TO_CM(Xdata.z_S_n/cos_sl) << "," << std::setprecision(2) << Xdata.S_n;
 	fout << "," << std::setprecision(1) << M_TO_CM(Xdata.z_S_s/cos_sl) << "," << std::fixed << std::setprecision(2) << Xdata.S_s;
@@ -1465,7 +1465,7 @@ void AsciiIO::writeProfilePrf(const mio::Date& dateOfProfile, const SnowStation&
 	ofs << "#Stab,stab_height,stab_index,stab_class1,stab_class2\n";
 	ofs << "# ,cm,1,1,1\n";
 	ofs << "deformation," << setprecision(1) << M_TO_CM(Xdata.z_S_d/cos_sl) << "," << setprecision(2) << Xdata.S_d << ",";
-	ofs << +Xdata.S_class1 << "," << +Xdata.S_class2 << "\n"; //force printing type char as numerica value
+	ofs << +Xdata.S_class1 << "," << +Xdata.S_class2 << "\n"; //force printing type char as numerical value
 	ofs << "natural," << setprecision(1) << M_TO_CM(Xdata.z_S_n/cos_sl) << "," << setprecision(2) << Xdata.S_n << "\n";
 	ofs << "ssi," << setprecision(1) << M_TO_CM(Xdata.z_S_s/cos_sl) << "," << setprecision(2) << Xdata.S_s << "\n";
 	ofs << "S4," << setprecision(1) << M_TO_CM(Xdata.z_S_4/cos_sl) << "," << setprecision(2) << Xdata.S_4 << "\n";
@@ -2031,7 +2031,7 @@ void AsciiIO::writeTimeSeries(const SnowStation& Xdata, const SurfaceFluxes& Sda
 			fout << ",";
 		// 55-66: Stability Time Series, heights in cm
 		if (out_stab) {
-			fout << "," << +Xdata.S_class1 << "," << +Xdata.S_class2 << std::fixed; //profile type and stability class, force printing type char as numerica value
+			fout << "," << +Xdata.S_class1 << "," << +Xdata.S_class2 << std::fixed; //profile type and stability class, force printing type char as numerical value
 			fout << "," << std::setprecision(1) << M_TO_CM(Xdata.z_S_d/cos_sl) << "," << std::setprecision(2) << Xdata.S_d;
 			fout << "," << std::setprecision(1) << M_TO_CM(Xdata.z_S_n/cos_sl) << "," << std::setprecision(2) << Xdata.S_n;
 			fout << "," << std::setprecision(1) << M_TO_CM(Xdata.z_S_s/cos_sl) << "," << std::setprecision(2) << Xdata.S_s;
