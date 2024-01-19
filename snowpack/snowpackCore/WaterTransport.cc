@@ -708,7 +708,7 @@ void WaterTransport::adjustDensity(SnowStation& Xdata)
 	}
 	const double cH_old = Xdata.cH;
 	Xdata.cH = NDS[Xdata.getNumberOfNodes()-1].z + NDS[Xdata.getNumberOfNodes()-1].u;
-	Xdata.mH -= (cH_old - Xdata.cH);
+	if (Xdata.mH!=Constants::undefined) Xdata.mH -= (cH_old - Xdata.cH);
 }
 
 /**
