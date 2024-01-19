@@ -1909,7 +1909,7 @@ SnowStation::SnowStation(const bool i_useCanopyModel, const bool i_useSoilLayers
                          const bool i_useSeaIceModule) :
 	meta(), cos_sl(1.), sector(0), Cdata(), Seaice(NULL), pAlbedo(0.), Albedo(0.),
 	SoilAlb(0.), SoilEmissivity(0.), BareSoil_z0(0.), SoilNode(0), Ground(0.),
-	cH(0.), mH(0.), mass_sum(0.), swe(0.), lwc_sum(0.), lwc_sum_soil(0.), swc_sum_soil(0), hn(0.), rho_hn(0.), rime_hn(0.), ErosionLevel(0), ErosionMass(0.),
+	cH(0.), mH(IOUtils::nodata), mass_sum(0.), swe(0.), lwc_sum(0.), lwc_sum_soil(0.), swc_sum_soil(0), hn(0.), rho_hn(0.), rime_hn(0.), ErosionLevel(0), ErosionMass(0.),
 	S_class1(0), S_class2(0), S_d(0.), z_S_d(0.), S_n(0.), z_S_n(0.),
 	S_s(0.), z_S_s(0.), S_4(0.), z_S_4(0.), S_5(0.), z_S_5(0.),
 	Ndata(), Edata(), Kt(NULL), ColdContent(0.), ColdContentSoil(0.), dIntEnergy(0.), dIntEnergySoil(0.), meltFreezeEnergy(0.), meltFreezeEnergySoil(0.),
@@ -2356,7 +2356,7 @@ void SnowStation::initialize(const SN_SNOWSOIL_DATA& SSdata, const size_t& i_sec
 	cos_sl = cos(meta.getSlopeAngle()*mio::Cst::to_rad);
 	sector = i_sector;
 
-	mH = cH = SSdata.Height;
+	cH = SSdata.Height;
 
 	nNodes = SSdata.nN;
 	nElems = SSdata.nN-1;
