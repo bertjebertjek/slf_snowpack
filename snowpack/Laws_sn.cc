@@ -439,7 +439,7 @@ void SnLaws::compShortWaveAbsorption(const std::string& i_sw_absorption_scheme, 
 	if (nE==0) return;
 
 	const size_t bottom_element = (Xdata.SoilNode > 0)? Xdata.SoilNode - 1 : Xdata.SoilNode;
-	for (size_t e = bottom_element; e < nE; e++)
+	for (size_t e = 0; e < nE; e++)
 		EMS[e].sw_abs = 0.;
 
 	// Compute absorbed radiation
