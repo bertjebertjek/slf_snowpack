@@ -32,6 +32,8 @@ using namespace mio;
  * <a href="https://meteoio.slf.ch">MeteoIO</a> pre-processing library documentation (under
  * <i>"Available plugins and usage"</i>, then <i>"smet"</i>).
  *
+* @note There is also a python library, <a href="https://gitlabext.wsl.ch/patrick.leibersperger/pysmet">pySMET</a> available, to read SMET files.
+ * 
  * @section fluxes_ts Fluxes timeseries
  * These files are very regular SMET files with a large number of fields.
  *
