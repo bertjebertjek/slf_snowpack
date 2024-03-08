@@ -2465,7 +2465,11 @@ void AsciiIO::writeProHeader(const SnowStation& Xdata, std::ofstream &fout) cons
 	fout << "\n0531,nElems,deformation rate stability index Sdef";
 	fout << "\n0532,nElems,natural stability index Sn38";
 	fout << "\n0533,nElems,stability index Sk38";
-	fout << "\n0534,nElems,hand hardness either (N) or index steps (1)";
+	if (r_in_n) {
+		fout << "\n0534,nElems,hand hardness in Newton (N)";
+	} else {
+		fout << "\n0534,nElems,hand hardness in index steps (1)";
+	}
 	fout << "\n0535,nElems,optical equivalent grain size (mm)";
 	if (Xdata.Seaice != NULL) {
 		fout << "\n0540,nElems,bulk salinity (g/kg)";
