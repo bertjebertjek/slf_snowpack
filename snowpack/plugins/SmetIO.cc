@@ -21,6 +21,7 @@
 #include <snowpack/plugins/SmetIO.h>
 #include <snowpack/Utils.h>
 #include <snowpack/snowpackCore/Metamorphism.h>
+#include <snowpack/StabilityAlgorithms.h>
 
 using namespace std;
 using namespace mio;
@@ -952,7 +953,7 @@ std::string SmetIO::getFieldsHeader(const SnowStation& Xdata) const
 	if (out_meteo)
 		os << "TA TSS_mod TSS_meas T_bottom RH VW VW_drift DW MS_Snow HS_mod HS_meas" << " "; //Air temperature, snow surface temperature (modeled and measured), temperature at bottom of snow/soil pack (degC)
 	if (out_haz)
-		os << "hoar_size wind_trans24 HN3 HN6 HN12 HN24 HN72_24 PSUM24" << " ";//surface hoar size (mm), 24h drift index (cm), 3 hours height of new snow HN (cm), 6 hours HN, 12 hours HN, 24 hours HN, 3d sum of daily new snow depths (cm), 24 h new snow water equivalent (kg m-2)
+		os << "hoar_size wind_trans24 HN3 HN6 HN12 HN24 HN72_24 PSUM24 ski_pen" << " ";//surface hoar size (mm), 24h drift index (cm), 3 hours height of new snow HN (cm), 6 hours HN, 12 hours HN, 24 hours HN, 3d sum of daily new snow depths (cm), 24 h new snow water equivalent (kg m-2), skier penetration depth (m)
 	if (out_soileb)
 		os << "dIntEnergySoil meltFreezeEnergySoil ColdContentSoil" << " ";
 	if (out_mass) {
@@ -1044,11 +1045,11 @@ void SmetIO::writeTimeSeriesHeader(const SnowStation& Xdata, const double& tz, s
 	}
 	if (out_haz) {
 		//"hoar_size wind_trans24 HN3 HN6 HN12 HN24 HN72_24 PSUM24(WC24)"
-		plot_description << "hoar_size  24h_wind_drift 3h_height_of_new_snow 6h_height_of_new_snow 12h_height_of_new_snow 24h_height_of_new_snow 3d_sum_of_daily_height_of_new_snow 24h_percipitation" << " ";
-		plot_units << "m m m m m m m m" << " ";
-		units_offset << "0 0 0 0 0 0 0 0" << " ";
-		units_multiplier << "0.001 0.01 0.01 0.01 0.01 0.01 0.01 0.001" << " ";
-		plot_color << "0x9933FF 0x99FFCC 0x006699 0x006699 0x006699 0x006699 0x33CCCC 0x006699" << " ";
+		plot_description << "hoar_size  24h_wind_drift 3h_height_of_new_snow 6h_height_of_new_snow 12h_height_of_new_snow 24h_height_of_new_snow 3d_sum_of_daily_height_of_new_snow 24h_percipitation skier_penetration_depth" << " ";
+		plot_units << "m m m m m m m m m" << " ";
+		units_offset << "0 0 0 0 0 0 0 0 0" << " ";
+		units_multiplier << "0.001 0.01 0.01 0.01 0.01 0.01 0.01 0.001 1" << " ";
+		plot_color << "0x9933FF 0x99FFCC 0x006699 0x006699 0x006699 0x006699 0x33CCCC 0x006699 0x9933FF" << " ";
 		plot_min << "" << " ";
 		plot_max << "" << " ";
 	}
@@ -1230,6 +1231,15 @@ void SmetIO::writeTimeSeriesData(const SnowStation& Xdata, const SurfaceFluxes& 
 		data.push_back( (perp_to_slope? Hdata.hn24/cos_sl : Hdata.hn24) ); vec_precision.push_back(dflt_precision); vec_width.push_back(dflt_width);
 		data.push_back( (perp_to_slope? Hdata.hn72_24/cos_sl : Hdata.hn72_24) ); vec_precision.push_back(dflt_precision); vec_width.push_back(dflt_width);
 		data.push_back( (perp_to_slope? Hdata.psum24/cos_sl : Hdata.psum24) ); vec_precision.push_back(dflt_precision); vec_width.push_back(dflt_width);
+		try {
+    		double penetrationDepth = StabilityAlgorithms::compPenetrationDepth(Xdata);
+			if (!std::isfinite(penetrationDepth) || penetrationDepth < 0) {
+				throw std::runtime_error("Invalid penetration depth calculated.");
+			}
+			data.push_back( penetrationDepth ); vec_precision.push_back(dflt_precision); vec_width.push_back(dflt_width);
+		} catch (...) {
+			data.push_back( IOUtils::nodata ); vec_precision.push_back(dflt_precision); vec_width.push_back(dflt_width);
+		}
 
 	}
 
