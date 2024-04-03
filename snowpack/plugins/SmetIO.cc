@@ -1231,16 +1231,9 @@ void SmetIO::writeTimeSeriesData(const SnowStation& Xdata, const SurfaceFluxes& 
 		data.push_back( (perp_to_slope? Hdata.hn24/cos_sl : Hdata.hn24) ); vec_precision.push_back(dflt_precision); vec_width.push_back(dflt_width);
 		data.push_back( (perp_to_slope? Hdata.hn72_24/cos_sl : Hdata.hn72_24) ); vec_precision.push_back(dflt_precision); vec_width.push_back(dflt_width);
 		data.push_back( (perp_to_slope? Hdata.psum24/cos_sl : Hdata.psum24) ); vec_precision.push_back(dflt_precision); vec_width.push_back(dflt_width);
-		try {
-    		double penetrationDepth = StabilityAlgorithms::compPenetrationDepth(Xdata);
-			if (!std::isfinite(penetrationDepth) || penetrationDepth < 0) {
-				throw std::runtime_error("Invalid penetration depth calculated.");
-			}
-			data.push_back( penetrationDepth ); vec_precision.push_back(dflt_precision); vec_width.push_back(dflt_width);
-		} catch (...) {
-			data.push_back( IOUtils::nodata ); vec_precision.push_back(dflt_precision); vec_width.push_back(dflt_width);
-		}
-
+		double penetrationDepth = StabilityAlgorithms::compPenetrationDepth(Xdata);
+		data.push_back( penetrationDepth ); vec_precision.push_back(dflt_precision); vec_width.push_back(dflt_width);
+		
 	}
 
 	if (out_soileb) {
