@@ -494,7 +494,7 @@ double StabilityAlgorithms::setDeformationRateIndex(ElementData& Edata)
  */
 double StabilityAlgorithms::compPenetrationDepth(const SnowStation& Xdata)
 {
-	double rho_Pk = Constants::eps2, dz_Pk = Constants::eps2; // Penetration depth Pk, from mean slab density
+	double rho_Pk = 0., dz_Pk = 0.;           // Penetration depth Pk, from mean slab density
 	double top_crust = 0., thick_crust = 0.;  // Crust properties
 	bool crust = false;                       // Checks for crust
 	size_t e_crust = Constants::stundefined;
@@ -527,6 +527,9 @@ double StabilityAlgorithms::compPenetrationDepth(const SnowStation& Xdata)
 			}
 		}
 	}
+
+	if (dz_Pk == 0.) return IOUtils::nodata;
+
 	rho_Pk /= dz_Pk; //weighted average density of the snow slab penetrated by the skier
 
 	// NOTE Pre-factor 0.8 introduced May 2006 by S. Bellaire
