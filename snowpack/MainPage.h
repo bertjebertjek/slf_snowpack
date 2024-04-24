@@ -117,7 +117,7 @@
  *  More complex simulation workflows (such as spatial resampling or one-way coupling with other numerical models) are presented in the
  * \subpage advanced_setups "Advanced simulation setup" page.
  *
- * \image html simulation_workflow.png "Simulation workflow"
+ * \image html simulation_workflow.svg "Simulation workflow" width=50%
  * \image latex simulation_workflow.eps "Simulation workflow" width=0.9\textwidth
  */
 
@@ -218,7 +218,7 @@
  * calculations for arctic areas (Meirold-Mautner and Lehning, 2003) and calculations of chemical solute transport in snow (Waldner et al., 2003).
  *
  * @section physical_processes Physical processes
- * \image html physical_processes.png "Principal physical processes included in the SNOWPACK model"
+ * \image html physical_processes.svg "Principal physical processes included in the SNOWPACK model" width=50%
  * \image latex physical_processes.eps "Principal physical processes included in the SNOWPACK model" width=0.9\textwidth
  *
  * A graphical review of the physical processes described by the SNOWPACK model is given in the above figure. SNOWPACK is based on a Lagrangian
@@ -229,7 +229,7 @@
  *
  * @section model_structure Structure of the physical modeling
  * @subsection model_foundations Model Foundations
- * \image html snowpack_column.png "The SNOWPACK soil/snow/canopy column"
+ * \image html snowpack_column.svg "The SNOWPACK soil/snow/canopy column" width=20%
  * \image latex snowpack_column.eps "The SNOWPACK soil/snow/canopy column" width=0.5\textwidth
  * The SNOWPACK model is built around a 1D soil/snow/canopy column (see figure above). This in effect neglects lateral transfers and only considers vertical
  * gradients and transfers. The snow is modeled as a three phase porous medium (ice/liquid water/water vapor) but can also contain an arbitrary amount of soil
@@ -256,7 +256,7 @@
  *      an albedo and short wave absorption parametrization and a snowdrift model.
  *    - some post-processing models will be added to provide more relevant outputs: a hardness model, several snow stability index, a snow classification.
  *
- * \image html snowpack_physics.png "Structure of the SNOWPACK model"
+ * \image html snowpack_physics.svg "Structure of the SNOWPACK model" width=50%
  * \image latex snowpack_physics.eps "Structure of the SNOWPACK model" width=0.9\textwidth
  *
  * The user can configure variants of these basic model concepts. The way of interaction is primarily through a configuration file but also changes to the source code by
@@ -266,7 +266,7 @@
  * The figure below shows the various fluxes that are part of the energy balance of the SNOWPACK model. These are available in the output files as well as
  * through the <a href="https://niviz.org">niViz</a> interface.
  *
- * \image html energy_balance.png "Energy Balance components of the SNOWPACK model"
+ * \image html energy_balance.svg "Energy Balance components of the SNOWPACK model" width=50%
  * \image latex energy_balance.eps "Energy Balance components of the SNOWPACK model" width=0.9\textwidth
  *
  */
