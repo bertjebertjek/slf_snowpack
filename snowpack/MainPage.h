@@ -446,7 +446,7 @@
  * done with great care (the model performing various checks on the physical consistency of the input data, it \b will exclude data points that are not consistent
  * with the other parameters. For example, precipitation occuring simultaneously with quite dry air will be refused).
  *
- * \image html clear_sky.svg "Data consistency check" width=20%
+ * \image html clear_sky.svg "Data consistency check" width=500px
  * \image latex clear_sky.eps "Data consistency check" width=0.9\textwidth
  * For example, the figure above allows to check the following points:
  * - the (solid) precipitation are synchronized with the major snow height increase - this is consistent;
