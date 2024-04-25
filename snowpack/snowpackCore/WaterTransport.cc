@@ -32,6 +32,37 @@ using namespace mio;
 
 /**
  * @page water_transport Water Transport
+ * It is important to realize that snow is really a three phases medium: it might contain at the same time water in its solid phase (the ice crystals matrix),
+ * in its liquid phase (interstitial water) and in its gaseous phase (water vapor in the pore space). As the liquid water can move through the
+ * ice matrix, it transports mass as well as potentially energy. Depending on the conditions, it might also significantly alter the microstructure of
+ * the snow pack. Therefore it is very important to be able to simulate how this liquid water moves through the snow layers.
+ *
+ * @section matrix_vs_pref Matrix flow and preferential flow
+ * Liquid water can move through the snow pack in two distinct ways: through <i>matrix flow</i> or through <i>preferential flow</i>. They are fundamentally different and
+ * have very different time scales.
+ *
+ * @subsection matrix_flow Matrix flow
+ * Matrix flow represents how the liquid water moves through the pore space of the ice matrix. This capillary motion is dominated by surface tension effects. Such a flow
+ * is highly dependent on the tortuosity of the ice matrix, the water column pressure head and changes of such properties which can lead to capillary barriers. The kind
+ * of flow moves the bulk of the mass in a gradual process.
+ *
+ * @subsection preferential_flow Preferential flow
+ * A second kind of liquid water transport mechanism is through preferential flow. This is a 2 dimensional effect where at some places the liquid water is able to locally
+ * flow much deeper into the snow pack. Although highly relevant for its impact on the snow microstructure and for its impact on snow stability, this transport mechanism
+ * only carries a minority of the liquid water mass. But by providing liquid water in deeper layers much faster, it can contribute to triggering a weak layer or accumulate
+ * liquid water at a capillary barrier (<i>ponding</i>) that could later refreeze and build an ice layer.
+ *
+ * @subsection wt_modeling Modeling
+ * In Snowpack, water transport can currently either be modeled with the bucket approach or by solving the Richards equations.
+ *
+ * In the bucket approach, each snow layer has a given water storage capacity that can be filled by liquid water (thus similar to a bucket) and then overflows
+ * down to the next layer when full. This is computationally efficient but not a very accurate representation of the physical phenomenons involved in the liquid water transport.
+ *
+ * On the other hand, the Richards equation describes the flow of a liquid in a porous media and is therefore a much more adequate representation. The novelty of the Richards
+ * equation solver in Snowpack is to use such equations in a media where the matrix is just a different phase of the liquid. This is computationally much more challenging
+ * than the bucket approach and needs to be much more carefully configured.
+ *
+ * @section snowpack_wt_keys Configuration keys
  *
  */
 

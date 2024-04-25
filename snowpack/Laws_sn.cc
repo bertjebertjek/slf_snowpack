@@ -630,6 +630,7 @@ double SnLaws::soilVaporDiffusivity(const ElementData& Edata)
  * temperature gradients in the air phase.
  * @author Margaux Couttet
  * @param Edata element data
+ * @param clay_fraction fraction of clay in the soil
  * @return Enhancement factor (-)
  */
 double SnLaws::compEnhanceWaterVaporTransportSoil(const ElementData& Edata, const double& clay_fraction)
@@ -653,6 +654,7 @@ double SnLaws::compEnhanceWaterVaporTransportSoil(const ElementData& Edata, cons
 * @param Edata_top element data
 * @param Te_bot lower element temperature (K)
 * @param Te_top upper element temperature (K)
+* @param clay_fraction fraction of clay in the soil
 * @return thermal vapor hydraulic conductivity (m2 K-1 s-1)
 */
 double SnLaws::compSoilThermalVaporConductivity(const ElementData& Edata_bot, const ElementData& Edata_top, const double& Te_bot, const double& Te_top, const double& clay_fraction)
@@ -984,8 +986,8 @@ double SnLaws::compLWRadCoefficient(const double& t_snow, const double& t_atm, c
 
 /**
  * @brief Event driven new-snow density
- * @param i_event:
- * - event_wind: rho = 250.3 kg m-3 @ 4 m s-1; rho = 338 kg m-3 @ 7 m s-1 Antarctica
+ * @param variant Snowpack variant (such as DEFAULT, POLAR...)
+ * @param i_event - event_wind: rho = 250.3 kg m-3 @ 4 m s-1; rho = 338 kg m-3 @ 7 m s-1 Antarctica
  * @param Mdata  Meteorological input
  */
 double SnLaws::newSnowDensityEvent(const std::string& variant, const SnLaws::EventType& i_event,
@@ -1017,7 +1019,7 @@ double SnLaws::newSnowDensityEvent(const std::string& variant, const SnLaws::Eve
  * @param RH  Relative air humidity (1)
  * @param VW  Mean wind velocity (m s-1)
  * @param HH  Altitude a.s.l. (m)
- * @param model Parameterization to be used
+ * @param i_hn_model Parameterization to be used
  * @return New snow density (kg m-3)
  */
 double SnLaws::newSnowDensityPara(const std::string& i_hn_model,
