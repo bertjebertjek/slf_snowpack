@@ -130,7 +130,7 @@
  * refer to MeteoIO's documentation section "Spatial resampling" (see for example the current stable release 
  * <a href="https://meteoio.slf.ch/doc-release/html/spatial_resampling.html">documentation</a>). 
  * 
- * \image html virtual_stations.png "Spatial resampling"
+ * \image html virtual_stations.svg "Spatial resampling" width=40%
  * \image latex virtual_stations.eps "Spatial resampling" width=0.9\textwidth
  * 
  * The SLOPE_FROM_SNO configuration key in the [Input] section controls whether slope angle and azimuth are taken from the sno file or from
@@ -435,7 +435,7 @@
  * done with great care (the model performing various checks on the physical consistency of the input data, it \b will exclude data points that are not consistent
  * with the other parameters. For example, precipitation occuring simultaneously with quite dry air will be refused).
  *
- * \image html clear_sky.png "Data consistency check"
+ * \image html clear_sky.svg "Data consistency check" width=20%
  * \image latex clear_sky.eps "Data consistency check" width=0.9\textwidth
  * For example, the figure above allows to check the following points:
  * - the (solid) precipitation are synchronized with the major snow height increase - this is consistent;
