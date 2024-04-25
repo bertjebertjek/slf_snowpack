@@ -53,13 +53,13 @@ using namespace mio;
  * liquid water at a capillary barrier (<i>ponding</i>) that could later refreeze and build an ice layer.
  *
  * @subsection wt_modeling Modeling
- * In Snowpack, water transport can currently either be modeled with the bucket approach or by solving the Richards equations.
+ * In %Snowpack, water transport can currently either be modeled with the bucket approach or by solving the Richards equations.
  *
  * In the bucket approach, each snow layer has a given water storage capacity that can be filled by liquid water (thus similar to a bucket) and then overflows
  * down to the next layer when full. This is computationally efficient but not a very accurate representation of the physical phenomenons involved in the liquid water transport.
  *
  * On the other hand, the Richards equation describes the flow of a liquid in a porous media and is therefore a much more adequate representation. The novelty of the Richards
- * equation solver in Snowpack is to use such equations in a media where the matrix is just a different phase of the liquid. This is computationally much more challenging
+ * equation solver in %Snowpack is to use such equations in a media where the matrix is just a different phase of the liquid. This is computationally much more challenging
  * than the bucket approach and needs to be much more carefully configured.
  *
  * @section snowpack_wt_keys Configuration keys
