@@ -1541,28 +1541,26 @@ double ElementData::snowResidualWaterContent(const double& theta_i)
 double ElementData::soilFieldCapacity() const
 {
 	double fc;
-  if (VG.defined == true)
-  {
-    fc=VG.field_capacity;
-  }
-  else{
-  	if (!(rg > 0.)) {
-  		fc = std::min(SnLaws::field_capacity_soil, (1. - theta[SOIL]) * 0.1);
-  	} else {
-  		//Follow implementation by Tobias Hipp master thesis.
-  		//Note that the value of 0.0976114 is more precise and the value of 60.8057 is
-  		//slightly different from what is mentioned in thesis, to make the function continuous over rg.
-  		if(rg<17.0) {
-  			fc = std::min(0.95, 0.32 / sqrt(rg) + 0.02);
-  		} else {
-  			if(rg<60.8057) {
-  				fc=0.0976114-0.002*(rg-17.0);
-  			} else {
-  				fc=0.01;
-  			}
-  		}
-  	}
-  }
+	if (VG.defined == true) {
+		fc=VG.field_capacity;
+	} else {
+		if (!(rg > 0.)) {
+			fc = std::min(SnLaws::field_capacity_soil, (1. - theta[SOIL]) * 0.1);
+		} else {
+			//Follow implementation by Tobias Hipp master thesis.
+			//Note that the value of 0.0976114 is more precise and the value of 60.8057 is
+			//slightly different from what is mentioned in thesis, to make the function continuous over rg.
+			if(rg<17.0) {
+				fc = std::min(0.95, 0.32 / sqrt(rg) + 0.02);
+			} else {
+				if(rg<60.8057) {
+					fc=0.0976114-0.002*(rg-17.0);
+				} else {
+					fc=0.01;
+				}
+			}
+		}
+	}
 	return std::min(1. - theta[SOIL], fc);		// Ensure that the field capacity does not exceed the pore space.
 }
 
