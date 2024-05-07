@@ -55,12 +55,29 @@ using namespace mio;
  * @subsection wt_modeling Modeling
  * In %Snowpack, water transport can currently either be modeled with the bucket approach or by solving the Richards equations.
  *
- * In the bucket approach, each snow layer has a given water storage capacity that can be filled by liquid water (thus similar to a bucket) and then overflows
- * down to the next layer when full. This is computationally efficient but not a very accurate representation of the physical phenomenons involved in the liquid water transport.
+ * @subsubsection Bucket scheme
+ * In the bucket scheme, each layer has an irreducible liquid water content. When liquid water content exceeds this value, it is moved to the next layer instantaneously (as if
+ * it is an overflowing bucket). This scheme is computationally very efficient, but does not reproduce certain flow features like capillary barriers, while also assuming
+ * infinite flow rates. For snow layers, the irreducible water content is determined following <A HREF="https://doi.org/10.3189/1998AoG26-1-64-68">Coleou and Lesaffre (1998)</A>.
+ * For soil, the irreducible water content is determined following the function in soilFieldCapacity(), where it is parameterized as a function of grain size.
  *
- * On the other hand, the Richards equation describes the flow of a liquid in a porous media and is therefore a much more adequate representation. The novelty of the Richards
- * equation solver in %Snowpack is to use such equations in a media where the matrix is just a different phase of the liquid. This is computationally much more challenging
- * than the bucket approach and needs to be much more carefully configured.
+ * @subsubsection Richards equation
+ * When using Richards equation, the Darcy flow for unsaturated media is solved (<A HREF="https://doi.org/10.5194/tc-8-257-2014">Wever et al., 2014</A>). This approach reproduces
+ * several flow features in a more physics-based way. For example, capillary barriers can inhibit downward percolation, and the percolation speed is more realistically simulated.
+ * To determine water retention, the van Genuchten parameterization is used for the relationship between pressure head and liquid water content. For snow, the model used is based
+ * on <A HREF="https://doi.org/10.3189/2012AoG61A001">Yamaguchi et al. (2012)</A>. Note that it is possible to specify another model by modifying the source code. To
+ * determine the saturated hydraulic conductivity, the parameterization by <A HREF="https://doi.org/10.5194/tc-6-939-2012">Calonne et al. (2012)</A> for permeability
+ * is used. The unsaturated hydraulic conductivity is subsequently determined from the saturated hydraulic conductivity using the Mualem model.
+ *
+ * For soil, the soil type is specified using grain size, according to the following table: https://snowpack.slf.ch/Soil-with-Richards-equation/. The soil type sets
+ * the van Genuchten parameters, the saturated hydraulic conductivity as well as porosity.
+ *
+ * Notes:
+ *   - When using Richards equation for soil, the hydraulic properties are determined from the grain size specified in the *sno file. This also overwrites porosity! This
+ *     means that the theta[SOIL] specified in the *sno file is overwritten!!!
+ *   - When soil is freezing, thermal equilibrium is assumed between liquid and ice. This can be tricky to initialize in the *sno file, and if not properly initialized,
+ *     large phase changes can occur at the first time step. To enforce thermal equilibrium in the soil, the key REQ_INITIALIZE_SOIL can be set to true. This then repartitions
+ *     the ICE and WATER content of the layer, while keeping the temperature constant, at the first time step after initialization.
  *
  * @section snowpack_wt_keys Configuration keys
  *
