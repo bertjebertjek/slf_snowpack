@@ -661,7 +661,7 @@ double SnLaws::compSoilThermalVaporConductivity(const ElementData& Edata_bot, co
 {
 	//Determine the nodal values by averaging between top and bottom elements
 	const double nodal_diffusivity = .5 * (SnLaws::soilVaporDiffusivity(Edata_top) + SnLaws::soilVaporDiffusivity(Edata_bot)); //(m2 s-1)
-	const double nodal_HR = .5 * (Edata_top.RelativeHumidity() + Edata_bot.RelativeHumidity()); //(-)
+	const double nodal_HR = .5 * (Edata_top.soilRelativeHumidity() + Edata_bot.soilRelativeHumidity()); //(-)
 	const double nodal_enhancement = .5 * (SnLaws::compEnhanceWaterVaporTransportSoil(Edata_top,clay_fraction)
 	+ SnLaws::compEnhanceWaterVaporTransportSoil(Edata_bot,clay_fraction)); // (-)
 
@@ -692,7 +692,7 @@ double SnLaws::compSoilIsothermalVaporConductivity(const ElementData& Edata_bot,
 	const double nodal_diffusivity = .5*(SnLaws::soilVaporDiffusivity(Edata_top) + SnLaws::soilVaporDiffusivity(Edata_bot)); //(m2 s-1)
 	const double nodal_vaporDensity = .5*(Atmosphere::waterVaporDensity(Te_top, Atmosphere::vaporSaturationPressure(Te_top))
 	                                   + Atmosphere::waterVaporDensity(Te_bot, Atmosphere::vaporSaturationPressure(Te_bot))); //(kg m-3)
-	const double nodal_HR = .5*(Edata_top.RelativeHumidity() + Edata_bot.RelativeHumidity()); //(-)
+	const double nodal_HR = .5*(Edata_top.soilRelativeHumidity() + Edata_bot.soilRelativeHumidity()); //(-)
 
 	return (nodal_diffusivity/Constants::density_water * nodal_vaporDensity * Constants::g/(Constants::gas_constant * T_node)) * nodal_HR;
 }
@@ -896,7 +896,7 @@ double SnLaws::compLatentHeat_Rh(const std::string soil_evaporation,
 			 * in snowpackCore/Snowpack.h
 			*/
 			if (soil_evaporation=="EVAP_RELATIVE_HUMIDITY") {
-				eS = Vp2 * Xdata.Edata[Xdata.SoilNode-1].RelativeHumidity();
+				eS = Vp2 * Xdata.Edata[Xdata.SoilNode-1].soilRelativeHumidity();
 			} else {
 				eS = Vp2;
 			}
@@ -1119,7 +1119,7 @@ double SnLaws::newSnowDensityHendrikx(const double ta, const double tss, const d
  * @name New snow density
  * @brief Computes the density of new snow. The options for HN_DENSITY are:
  * - PARAMETERIZED (default is LEHNING_NEW):
- * 	- ZWART: Costijn Zwart's model (elaborated 2006; in use since 4 Dec 2007
+ * 	- ZWART: Costijn Zwart's model (elaborated 2006; in use since 4 Dec 2007)
  * 	- LEHNING_NEW: Improved model by M. Lehning, incl. ad-hoc wind & temperature effects (used until 06/07)
  * 	- LEHNING_OLD: First model by M. Lehning
  *       @note {models by M. Lehning can be augmented with a parameterization for winds > 2.9 m s-1

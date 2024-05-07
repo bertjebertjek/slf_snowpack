@@ -1565,20 +1565,19 @@ double ElementData::soilFieldCapacity() const
 }
 
 /**
- * @brief RelativeHumidity
- * @author Nander Wever et al.
+ * @brief soilRelativeHumidity
+ * @author Margaux Couttet and Nander Wever
  * @brief Relative humidity in soil.
  * The formulation is based on Saito et al., 2006 "Numerical analysis of
  * coupled water vapor and heat transport in the vadose zone".
  * Calculated from the pressure head using a thermodynamic relationship
  * between liquid water and water vapor in soil pores (Philip and de Vries, 1957)
- * @author Margaux Couttet
  * @param Edata element data
  * @param Temperature temperature (K)
  * @return Soil relative humidity (-)
  */
 
-double ElementData::RelativeHumidity() const
+double ElementData::soilRelativeHumidity() const
 {
 	if (VG.defined == true) {
 		return (std::max(0., std::min(1., exp(h * Constants::g / (Constants::gas_constant * Te))))); //see eq. [18] from Saito et al., 2006
