@@ -117,8 +117,8 @@ void Hazard::actOnVector(std::vector<double>& oldVector, const double& newValue,
 			break;
 		case noAction:
 			break;
-    default:
-      InvalidArgumentException("Unknown action provided to actOnVector", AT);
+		default:
+			throw InvalidArgumentException("Unknown action provided to actOnVector", AT);
 	}
 }
 
