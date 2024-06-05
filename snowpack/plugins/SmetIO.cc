@@ -150,7 +150,7 @@ SmetIO::SmetIO(const SnowpackConfig& cfg, const RunInfo& run_info)
           in_dflt_TZ(0.), calculation_step_length(0.), ts_days_between(0.), min_depth_subsurf(0.),
           avgsum_time_series(false), useCanopyModel(false), useSoilLayers(false), research_mode(false), perp_to_slope(false), haz_write(true), useReferenceLayer(false),
           out_heat(false), out_lw(false), out_sw(false), out_meteo(false), out_haz(false), out_mass(false), out_t(false),
-          out_load(false), out_stab(false), out_canopy(false), out_soileb(false), useRichardsEq(false), enable_pref_flow(false), enable_ice_reservoir(false), read_dsm(false)
+          out_load(false), out_stab(false), out_canopy(false), out_soileb(false), out_inflate(false), useRichardsEq(false), enable_pref_flow(false), enable_ice_reservoir(false), read_dsm(false)
 {
 	cfg.getValue("TIME_ZONE", "Input", in_dflt_TZ);
 	cfg.getValue("CANOPY", "Snowpack", useCanopyModel);
@@ -192,6 +192,7 @@ SmetIO::SmetIO(const SnowpackConfig& cfg, const RunInfo& run_info)
 	cfg.getValue("OUT_MASS", "Output", out_mass);
 	cfg.getValue("OUT_METEO", "Output", out_meteo);
 	cfg.getValue("OUT_SOILEB", "Output", out_soileb);
+	cfg.getValue("INFLATE_ALLOW", "Snowpack", out_inflate, IOUtils::nothrow);
 	cfg.getValue("OUT_STAB", "Output", out_stab);
 	cfg.getValue("OUT_SW", "Output", out_sw);
 	cfg.getValue("OUT_T", "Output", out_t);
@@ -259,6 +260,7 @@ SmetIO& SmetIO::operator=(const SmetIO& source) {
 		out_stab = source.out_stab;
 		out_canopy = source.out_canopy;
 		out_soileb = source.out_soileb;
+		out_inflate = source.out_inflate;
 		useRichardsEq = source.useRichardsEq;
 		enable_pref_flow = source.enable_pref_flow;
 		enable_ice_reservoir = source.enable_ice_reservoir;
@@ -965,6 +967,8 @@ std::string SmetIO::getFieldsHeader(const SnowStation& Xdata) const
 			if (useSoilLayers) os << "Lateral_flow_soil" << " ";
 		}
 	}
+	if (out_inflate)
+		os << "dHS_corr dMass_corr" << " "; //snow depth (cm) and mass correction (kg m-2) from inflate/deflate
 	if (out_load)
 		os << "load "; //Solute load at ground surface
 	if (out_t && !fixedPositions.empty()) {
@@ -1090,6 +1094,16 @@ void SmetIO::writeTimeSeriesHeader(const SnowStation& Xdata, const double& tz, s
 				plot_max << "" << " ";
 			}
 		}
+	}
+	if (out_inflate) {
+		//"dHS_corr dMass_corr"
+		plot_description << "snow_depth_correction_inflate_deflate  mass_correction_inflate_deflate" << " "; //snow depth (cm) and mass correction (kg m-2) from inflate/deflate
+		plot_units << "cm kg m-2" << " ";
+		units_offset << "0 0" << " ";
+		units_multiplier << "1 1" << " ";
+		plot_color << "0xa503fc 0x03bafc" << " ";
+		plot_min << "" << " ";
+		plot_max << "" << " ";
 	}
 	if (out_load) {
 		//"load"
@@ -1287,6 +1301,12 @@ void SmetIO::writeTimeSeriesData(const SnowStation& Xdata, const SurfaceFluxes& 
 				vec_width.push_back(dflt_width);
 			}
 		}
+	}
+
+	if (out_inflate) {
+		// snow depth (cm) and mass correction (kg m-2) from inflate/deflate
+		data.push_back( M_TO_CM(Hdata.dhs_corr) ); vec_precision.push_back(dflt_precision); vec_width.push_back(dflt_width);
+		data.push_back( Hdata.mass_corr ); vec_precision.push_back(dflt_precision); vec_width.push_back(dflt_width);
 	}
 
 	if (out_load) {
