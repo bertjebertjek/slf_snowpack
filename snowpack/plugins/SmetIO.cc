@@ -1069,7 +1069,7 @@ void SmetIO::writeTimeSeriesHeader(const SnowStation& Xdata, const double& tz, s
 		plot_units << "kg/m2 kg/m2 kg/m2 kg/m2 kg/m2/h kg/m2/h kg/m2 kg/m2 kg/m2 kg/m2 kg/m2" << " ";
 		units_offset << "0 0 0 0 0 0 0 0 0 0 0" << " ";
 		units_multiplier << "1 1 1 1 1 1 1 1 1 1 1" << " ";
-		plot_color << "0x3300FF 0x3300FF 0x3300FF 0x3300FF 0x0000FF 0x99CCCC 0x3333 0x0066CC 0x003366 0xCCFFFF 0xCCCCFF" << " ";
+		plot_color << "0x3300FF 0x3300FF 0x3300FF 0x3300FF 0x0000FF 0x99CCCC 0x009E9E 0x0066CC 0x003366 0xCCFFFF 0xCCCCFF" << " ";
 		plot_min << "" << " ";
 		plot_max << "" << " ";
 		if (useRichardsEq && Xdata.meta.getSlopeAngle() > 0.) {
