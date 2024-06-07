@@ -371,7 +371,7 @@ void VapourTransport::LayerToLayer(const CurrentMeteo& Mdata, SnowStation& Xdata
 				EMS[e].theta[WATER] += dTh_water;
 				EMS[e].theta[ICE] += dTh_ice;
 
-				Sdata.mass[SurfaceFluxes::MS_SUBLIMATION] += dTh_water * Constants::density_water * EMS[e].L;
+				Sdata.mass[SurfaceFluxes::MS_EVAPORATION] += dTh_water * Constants::density_water * EMS[e].L;
 				Sdata.mass[SurfaceFluxes::MS_SUBLIMATION] += dTh_ice * Constants::density_ice * EMS[e].L;
 				EMS[e].M += dTh_water * Constants::density_water * EMS[e].L+dTh_ice * Constants::density_ice * EMS[e].L;
 				assert(EMS[e].M >= (-Constants::eps2)); // mass must be positive
@@ -388,7 +388,7 @@ void VapourTransport::LayerToLayer(const CurrentMeteo& Mdata, SnowStation& Xdata
 				if (EMS[e].Te >= EMS[e].meltfreeze_tk) {
 					EMS[e].theta[WATER] += deltaM[e] / (Constants::density_water * EMS[e].L);
 					EMS[e].Qmm += (deltaM[e]*Constants::lh_vaporization)/sn_dt/EMS[e].L;	// [w/m^3]
-					Sdata.mass[SurfaceFluxes::MS_SUBLIMATION] += deltaM[e];
+					Sdata.mass[SurfaceFluxes::MS_EVAPORATION] += deltaM[e];
 				} else {
 					EMS[e].theta[ICE] += deltaM[e] / (Constants::density_ice * EMS[e].L);
 					EMS[e].Qmm += (deltaM[e]*Constants::lh_sublimation)/sn_dt/EMS[e].L;	// [w/m^3]
