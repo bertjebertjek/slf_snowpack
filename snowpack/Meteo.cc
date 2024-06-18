@@ -142,7 +142,7 @@ void Meteo::projectPrecipitations(const double& slope_angle, double& precips, do
 {
 	const double cos_sl = cos(slope_angle*mio::Cst::to_rad);
 	precips *= cos_sl;
-	hs *= cos_sl;
+	if (hs != IOUtils::nodata) hs *= cos_sl;
 }
 
 void Meteo::RichardsonStability(const double& ta_v, const double& t_surf_v, const double& zref, const double& vw, const double& z_ratio, double &ustar, double &psi_s)
