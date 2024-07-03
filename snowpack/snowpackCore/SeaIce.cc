@@ -694,6 +694,7 @@ void SeaIce::InitSeaIce(SnowStation& Xdata)
 
 	// Set thermodynamical properties consistently (temperature, salinity, etc):
 	for (size_t e = Xdata.SoilNode; e < nE; e++) {
+		std::cout << "[i] Initializing sea ice layer " << e << ". Original values: " << " h=" << Xdata.Edata[e].h << " theta[ICE]=" << Xdata.Edata[e].theta[ICE] << " theta[WATER]=" << Xdata.Edata[e].theta[WATER] << " theta[AIR]=" << Xdata.Edata[e].theta[AIR] << " Bulk salinity: " << Xdata.Edata[e].salinity << std::endl;
 		// If a layer is reported as dry, no salinity can be present:
 		if (Xdata.Edata[e].theta[WATER]<Constants::eps) {
 			Xdata.Edata[e].salinity = 0.;
@@ -718,6 +719,10 @@ void SeaIce::InitSeaIce(SnowStation& Xdata)
 	for (size_t e = Xdata.SoilNode; e < nE; e++) {
 		Xdata.Edata[e].h = (hbottom - Xdata.Edata[e].VG.h_e) - z;
 		z += Xdata.Edata[e].L;
+	}
+
+	for (size_t e = Xdata.SoilNode; e < nE; e++) {
+		std::cout << "[i] Initializing sea ice layer " << e << ". Initialized values: " << " h=" << Xdata.Edata[e].h << " theta[ICE]=" << Xdata.Edata[e].theta[ICE] << " theta[WATER]=" << Xdata.Edata[e].theta[WATER] << " theta[AIR]=" << Xdata.Edata[e].theta[AIR] << " Bulk salinity: " << Xdata.Edata[e].salinity << std::endl;
 	}
 }
 
