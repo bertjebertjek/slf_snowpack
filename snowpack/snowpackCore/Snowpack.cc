@@ -1871,8 +1871,7 @@ void Snowpack::compSnowFall(const CurrentMeteo& Mdata, SnowStation& Xdata, doubl
 					EMS[e].theta[AIR]+=((Constants::density_water/Constants::density_ice)-1.)*(2.*Constants::eps);
 				}
 				if (variant == "SEAICE" ) {
-					const double BrineSal_new = (EMS[e].theta[WATER] == 0.) ? (0.) : (EMS[e].salinity / EMS[e].theta[WATER]);
-					EMS[e].meltfreeze_tk = Xdata.Seaice->calculateMeltingTemperature(BrineSal_new);
+					Xdata.Seaice->calculateMeltingTemperature(EMS[e]);
 				} else {
 					EMS[e].meltfreeze_tk = Constants::meltfreeze_tk;
 				}
