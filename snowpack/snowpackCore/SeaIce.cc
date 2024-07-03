@@ -325,7 +325,7 @@ void SeaIce::calculateMeltingTemperature(ElementData& Edata)
 {
 	// See: Bitz, C. M., and W. H. Lipscomb (1999), An energy-conserving thermodynamic model of sea ice, J. Geophys. Res., 104(C7), 15669–15677, doi:10.1029/1999JC900100.
 	//      who is citing: Assur, A., Composition of sea ice and its tensile strength, in Arctic Sea Ice, N.  A.  S. N.  R.  C. Publ., 598, 106-138, 1958.
-	Edata.meltfreeze_tk = (Edata.theta[WATER] + Edata.theta[WATER_PREF] > Constants::eps2) ? (SeaIce::calculateMeltingTemperature(Edata.salinity / (Edata.theta[WATER] + Edata.theta[WATER_PREF]))) : (Constants::meltfreeze_tk);
+	Edata.meltfreeze_tk = (Edata.theta[WATER] + Edata.theta[WATER_PREF] > Constants::eps2 && Edata.salinity > Constants::eps2) ? (SeaIce::calculateMeltingTemperature(Edata.salinity / (Edata.theta[WATER] + Edata.theta[WATER_PREF]))) : (Constants::meltfreeze_tk);
 	return;
 }
 
