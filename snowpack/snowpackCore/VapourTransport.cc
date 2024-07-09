@@ -806,7 +806,7 @@ bool VapourTransport::compDensityProfile(const CurrentMeteo& Mdata, SnowStation&
 			double error = std::abs(NDS[k].rhov-oldVaporDenNode[k]);
 			if(NDS[k].rhov<0) {
 				std::ostringstream err_msg;
-				err_msg << "Error, rhov is below zero (" << NDS[k].rhov << "). Can not proceed.";
+				err_msg << "[E] [" <<  Mdata.date.toString(Date::ISO) << "] Error, rhov is below zero (" << NDS[k].rhov << "). Can not proceed.";
 				throw mio::IOException(err_msg.str(), AT);
 			}
 			error_max = std::max(error_max, error);
