@@ -689,26 +689,19 @@ bool VapourTransport::compDensityProfile(const CurrentMeteo& Mdata, SnowStation&
 	// otherwise for the effective water vapor diffusivity in snow eps_=1.
 	// for now Deff,s is available so eps_=1
 	std::vector<double> eps_(nN, 1.0);
-	for(size_t i=0; i<nN; i++)
-	{
-		if(i==0)
-		{
+	for(size_t i=0; i<nN; i++) {
+		if(i==0) {
 			eps_[i]=std::max(EMS[i].theta[AIR],1.0);
-		}
-		else if(i==nN-1)
-		{
+		} else if(i==nN-1) {
 			eps_[i]=0.5*std::max(EMS[i-1].theta[AIR],1.0)+0.5;
-		}
-		else
-		{
+		} else {
 			eps_[i]=std::max(EMS[i].theta[AIR],1.0);
 		}
 	}
 
-	double error_max = 0;
-	do
-	{
-		error_max = 0;
+	double error_max = 0.;
+	do {
+		error_max = 0.;
 
 		// The lower B.C.
 		if(bottomDirichletBCtype){
