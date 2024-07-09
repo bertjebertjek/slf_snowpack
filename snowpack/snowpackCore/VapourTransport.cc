@@ -762,6 +762,10 @@ bool VapourTransport::compDensityProfile(const CurrentMeteo& Mdata, SnowStation&
 		tripletList.clear();
 		A.makeCompressed();
 
+		// Solver settings
+		solver.setTolerance(Constants::eps2);
+		solver.setMaxIterations(10*nE);
+
 		solver.compute(A);
 		if (solver.info() != Eigen::Success) {
 			std::ostringstream err_msg;
@@ -785,7 +789,10 @@ bool VapourTransport::compDensityProfile(const CurrentMeteo& Mdata, SnowStation&
 			if (solver.info() == Eigen::NumericalIssue) {
 				err_msg << "Numerical issue" << std::endl;
 			} else if (solver.info() == Eigen::NoConvergence) {
-				err_msg << "No convergence" << std::endl;
+				Eigen::JacobiSVD<Eigen::MatrixXd> svd(A);
+				double cond = svd.singularValues()(0) / svd.singularValues()(svd.singularValues().size() - 1);
+				err_msg << "No convergence (condition number A: " << cond << ", latest residual norm: " << solver.error() << ", required: " << solver.tolerance() << ")" << std::endl;
+				err_msg << "    ---> Try increasing solver Tolerance or MaxIterations." << std::endl;
 			} else if (solver.info() == Eigen::InvalidInput) {
 				err_msg << "Invalid input" << std::endl;
 			}
