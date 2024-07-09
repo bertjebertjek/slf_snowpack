@@ -763,17 +763,33 @@ bool VapourTransport::compDensityProfile(const CurrentMeteo& Mdata, SnowStation&
 		A.makeCompressed();
 
 		solver.compute(A);
-		if (solver.info() != Success) {
+		if (solver.info() != Eigen::Success) {
 			std::ostringstream err_msg;
-			err_msg << "Error computing 'A' with Eigen: " << Mdata.date << solver.info();
+			err_msg << "[E] [" <<  Mdata.date.toString(Date::ISO) << "] Error computing 'A' with Eigen: ";
+			if (solver.info() == Eigen::NumericalIssue) {
+				err_msg << "Numerical issue" << std::endl;
+			} else if (solver.info() == Eigen::NoConvergence) {
+				err_msg << "No convergence" << std::endl;
+			} else if (solver.info() == Eigen::InvalidInput) {
+				err_msg << "Invalid input" << std::endl;
+			}
+			err_msg << std::endl;
 			throw mio::IOException(err_msg.str(), AT);
 		}
 
 		// Solve the equation
 		xx = solver.solve(b);
-		if (solver.info() != Success) {
+		if (solver.info() != Eigen::Success) {
 			std::ostringstream err_msg;
-			err_msg << "Error solving 'b' with Eigen: " << Mdata.date << solver.info();
+			err_msg << "[E] [" <<  Mdata.date.toString(Date::ISO) << "] Error solving 'b' with Eigen: ";
+			if (solver.info() == Eigen::NumericalIssue) {
+				err_msg << "Numerical issue" << std::endl;
+			} else if (solver.info() == Eigen::NoConvergence) {
+				err_msg << "No convergence" << std::endl;
+			} else if (solver.info() == Eigen::InvalidInput) {
+				err_msg << "Invalid input" << std::endl;
+			}
+			err_msg << std::endl;
 			throw mio::IOException(err_msg.str(), AT);
 		}
 
