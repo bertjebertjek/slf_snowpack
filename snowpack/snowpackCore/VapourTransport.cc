@@ -388,6 +388,7 @@ void VapourTransport::LayerToLayer(const CurrentMeteo& Mdata, SnowStation& Xdata
 				dHoar = std::max(-NDS[nN-1].hoar, deltaM[e]);
 			}
 		} else {  // Mass gain: add water in case temperature at or above melting point, ice otherwise
+			// FIXME: the code below is prone to errors, as more volumetric content can be added than available, resulting in a sum of volumetric content exceeding 1.
 			if (EMS[e].Te >= EMS[e].meltfreeze_tk) {
 				EMS[e].theta[WATER] += deltaM[e] / (Constants::density_water * EMS[e].L);
 				EMS[e].Qmm += (deltaM[e]*Constants::lh_vaporization)/sn_dt/EMS[e].L;	// [w/m^3]
@@ -408,7 +409,10 @@ void VapourTransport::LayerToLayer(const CurrentMeteo& Mdata, SnowStation& Xdata
 		}
 		EMS[e].updDensity();
 		assert(EMS[e].Rho > 0 || EMS[e].Rho == IOUtils::nodata); // density must be positive
-		if (!(EMS[e].Rho > Constants::eps && EMS[e].theta[AIR] >= 0. && EMS[e].theta[WATER] <= 1. + Constants::eps && EMS[e].theta[ICE] <= 1. + Constants::eps)) {
+		if (!(EMS[e].Rho > Constants::eps
+		      && EMS[e].theta[AIR] >= 0.
+		      && EMS[e].theta[WATER] <= 1. + Constants::eps && EMS[e].theta[ICE] <= 1. + Constants::eps
+		      && (EMS[e].theta[WATER] + EMS[e].theta[WATER_PREF] + EMS[e].theta[ICE] + EMS[e].theta[SOIL] + EMS[e].theta[AIR] + EMS[e].theta[SOIL] - 1) < 1.e-12)) {
 				prn_msg(__FILE__, __LINE__, "err", Date(),
 					"Volume contents: e=%d nE=%d rho=%lf ice=%lf wat=%lf wat_pref=%lf soil=%lf air=%le", e, nE, EMS[e].Rho, EMS[e].theta[ICE],
 						EMS[e].theta[WATER], EMS[e].theta[WATER_PREF], EMS[e].theta[SOIL], EMS[e].theta[AIR]);
@@ -472,11 +476,12 @@ void VapourTransport::compSurfaceSublimation(const CurrentMeteo& Mdata, double& 
 		if (Tss < meltfreeze_tk) { // Add Ice
 			dM = ql*sn_dt/Constants::lh_sublimation;
 			// If rh is very close to 1, vw too high or ta too high, surface hoar is destroyed and should not be formed
-			if (!((Mdata.rh > hoar_thresh_rh) || (Mdata.vw > hoar_thresh_vw) || (Mdata.ta >= IOUtils::C_TO_K(hoar_thresh_ta)))) {
-				// Under these conditions, form surface hoar
+			const bool formSurfaceHoar = !((Mdata.rh > hoar_thresh_rh) || (Mdata.vw > hoar_thresh_vw) || (Mdata.ta >= IOUtils::C_TO_K(hoar_thresh_ta)));
+			if (formSurfaceHoar || !enable_vapour_transport) {
 				ql = 0.;
 				Sdata.mass[SurfaceFluxes::MS_SUBLIMATION] += dM;
-				dHoar = dM;
+				// If conditions are met, form surface hoar
+				if (formSurfaceHoar) dHoar = dM;
 
 				// In this case adjust properties of element, keeping snow density constant
 				const double L_top = EMS[nE-1].L;
