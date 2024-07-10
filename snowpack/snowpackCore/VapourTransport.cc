@@ -412,7 +412,7 @@ void VapourTransport::LayerToLayer(const CurrentMeteo& Mdata, SnowStation& Xdata
 		if (!(EMS[e].Rho > Constants::eps
 		      && EMS[e].theta[AIR] >= 0.
 		      && EMS[e].theta[WATER] <= 1. + Constants::eps && EMS[e].theta[ICE] <= 1. + Constants::eps
-		      && (EMS[e].theta[WATER] + EMS[e].theta[WATER_PREF] + EMS[e].theta[ICE] + EMS[e].theta[SOIL] + EMS[e].theta[AIR] - 1) < 1.e-12)) {
+		      && (EMS[e].theta[WATER] + EMS[e].theta[WATER_PREF] + EMS[e].theta[ICE] + EMS[e].theta[SOIL] + EMS[e].theta[AIR] - 1.) < 1.e-12)) {
 				prn_msg(__FILE__, __LINE__, "err", Date(),
 					"Volume contents: e=%d nE=%d rho=%lf ice=%lf wat=%lf wat_pref=%lf soil=%lf air=%le", e, nE, EMS[e].Rho, EMS[e].theta[ICE],
 						EMS[e].theta[WATER], EMS[e].theta[WATER_PREF], EMS[e].theta[SOIL], EMS[e].theta[AIR]);
