@@ -1119,10 +1119,14 @@ inline void real_main (int argc, char *argv[])
 
 		memset(&mn_ctrl, 0, sizeof(MainControl));
 		if (mode == "RESEARCH") {
-			mn_ctrl.resFirstDump = true; //HACK to dump the initial state in research mode
+			if (!restart) {
+				mn_ctrl.resFirstDump = true;  //HACK to dump the initial state in research mode
+				current_date -= calculation_step_length/(24.*60.); //Do a first time step to fill all output fields
+			} else {
+				mn_ctrl.resFirstDump = false; //No initial state dump when doing a restart
+			}
 			deleteOldOutputFiles(outpath, experiment, vecStationIDs[i_stn], slope.nSlopes, snowpackio.getExtensions());
 			cfg.write(outpath + "/" + vecStationIDs[i_stn] + "_" + experiment + ".ini"); //output config
-			if (!restart) current_date -= calculation_step_length/(24.*60.);
 		} else {
 			const std::string db_name = cfg.get("DBNAME", "Output", "");
 			if (db_name == "sdbo" || db_name == "sdbt")
