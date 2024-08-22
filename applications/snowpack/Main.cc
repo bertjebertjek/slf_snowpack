@@ -668,16 +668,9 @@ inline void getOutputControl(MainControl& mn_ctrl, const mio::Date& step, const 
 		// Hazard data, every half-hour
 		mn_ctrl.HzDump = booleanTime(Dstep, 0.5/24., 0.0, calculation_step_length);
 		// Time series (*.met)
-		double bool_start = H_TO_D(tsstart);
-		if ( bool_start > 0. )
-			bool_start += Dsno_step;
-		mn_ctrl.TsDump = booleanTime(Dstep, tsdaysbetween, bool_start, calculation_step_length);
+		mn_ctrl.TsDump = booleanTime(Dstep, tsdaysbetween, ((tsstart > 0.) ? (tsstart + Dsno_step) : (0.)), calculation_step_length);
 		// Profile (*.pro)
-		bool_start = H_TO_D(profstart);
-		if ( bool_start > 0. )
-			bool_start += Dsno_step;
-		mn_ctrl.PrDump = booleanTime(Dstep, profdaysbetween, bool_start, calculation_step_length);
-
+		mn_ctrl.PrDump = booleanTime(Dstep, profdaysbetween, ((profstart > 0.) ? (profstart + Dsno_step) : (0.)), calculation_step_length);
 	}
 
 	// Additional Xdata backup (*.<JulianDate>sno)
