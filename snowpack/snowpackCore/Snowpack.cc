@@ -439,6 +439,7 @@ void Snowpack::compSnowCreep(const CurrentMeteo& Mdata, SnowStation& Xdata)
 			            e, nE, EMS[e].Rho, EMS[e].theta[ICE], EMS[e].theta[WATER], EMS[e].theta[WATER_PREF], EMS[e].theta[AIR]);
 			throw IOException("Runtime Error in compSnowCreep()", AT);
 		}
+		EMS[e].gradT = (NDS[e+1].T - NDS[e].T) / EMS[e].L;
 	}
 	// Update computed snow depth
 	Xdata.cH = NDS[nN-1].z + NDS[nN-1].u;
