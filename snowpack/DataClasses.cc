@@ -2298,6 +2298,8 @@ void SnowStation::reduceNumberOfElements(const size_t& rnE)
 				Ndata[eNew].ssi = Ndata[e+1].ssi;
 				Ndata[eNew].S_s = Ndata[e+1].S_s;
 				Ndata[eNew].S_n = Ndata[e+1].S_n;
+				// If there is an element below, update its gradient, since we just modified its upper node
+				if (eNew>0) Edata[eNew-1].gradT = (Ndata[eNew].T - Ndata[eNew-1].T) / Edata[eNew-1].L;
 			} else { // Removing elements for negative length L
 				// Under the condition of multiple element removals, Edata[e].L can occasionally represent a compounded element,
 				// such that it doesn't reflect the true height change. Better to use the nodal positions:
