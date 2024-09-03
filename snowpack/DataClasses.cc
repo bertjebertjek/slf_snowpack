@@ -2313,6 +2313,8 @@ void SnowStation::reduceNumberOfElements(const size_t& rnE)
 			Ndata[eNew+1].ssi = Ndata[e+1].ssi;
 			Ndata[eNew+1].S_s = Ndata[e+1].S_s;
 			Ndata[eNew+1].S_n = Ndata[e+1].S_n;
+			Edata[eNew].L = Edata[eNew].L0 = Ndata[eNew+1].z - Ndata[eNew].z;
+			Edata[eNew].gradT = (Ndata[eNew+1].T - Ndata[eNew].T) / Edata[eNew].L;
 			eNew++;
 		}
 	}
