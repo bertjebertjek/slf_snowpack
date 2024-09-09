@@ -875,7 +875,7 @@ inline void addSpecialKeys(SnowpackConfig &cfg)
 	//warn the user if the precipitation miss proper re-accumulation
 	const bool HS_driven = cfg.get("ENFORCE_MEASURED_SNOW_HEIGHTS", "Snowpack");
 	if (mode != "OPERATIONAL" && !HS_driven) {
-		const bool psum_key_exists = cfg.keyExistsRegex("PSUM::resample\\d+|PSUM::RESAMPLE\\d+", "Interpolations1D");
+		const bool psum_key_exists = cfg.keyExistsRegex("PSUM::[Re][Ee][Ss][As][Mm][Pp][Ll][Ee]\\d+", "Interpolations1D");
 		std::vector<std::pair<std::string, std::string>> vecAlgos;
 		if (psum_key_exists) {
 			vecAlgos = cfg.getValues("PSUM::RESAMPLE", "Interpolations1D");
