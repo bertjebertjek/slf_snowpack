@@ -25,6 +25,8 @@
 #include <sstream>
 #include <ctime>
 
+#include <regex>
+
 #ifdef _MSC_VER
 	/*
 	This software contains code under BSD license (namely, getopt for Visual C++).
@@ -419,7 +421,7 @@ inline void copyMeteoData(const mio::MeteoData& md, CurrentMeteo& Mdata,
 	} else {
 		Mdata.poor_ea = true;
 	}
-	
+
 	if (md.param_exists("NET_LW"))
 		Mdata.lw_net = md("NET_LW");
 	else
@@ -880,9 +882,18 @@ inline void addSpecialKeys(SnowpackConfig &cfg)
 		if (psum_key_exists) {
 			vecAlgos = cfg.getValues("PSUM::RESAMPLE", "Interpolations1D");
 		}
+
 		auto accumulateIndex = [](const std::vector<std::pair<std::string, std::string>>& vec) {
-			for (size_t ii; ii<vec.size(); ii++) {
-				if (IOUtils::strToUpper(vec[ii].second) == "ACCUMULATE") return static_cast<double>(ii);
+			for (size_t ii=0; ii<vec.size(); ii++) {
+				if (IOUtils::strToUpper(vec[ii].second) == "ACCUMULATE") {
+				    std::regex pattern ("^[A-Z]+::resample(\\d+)$", std::regex::icase);
+					std::smatch match;
+					if (std::regex_search(vec[ii].first, match, pattern)) { // first is the original key
+                        return static_cast<double>(std::stoi(match[1]));
+					} else {
+				        throw IOException("ACUUMULATE key " + vec[ii].first + " does not contain a valid index; I.e. it does not match the pattern PARAM::resample#",AT);
+					}
+				}
 			}
 			return IOUtils::nodata;
 		};
