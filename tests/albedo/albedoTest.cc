@@ -759,16 +759,25 @@ inline void addSpecialKeys(SnowpackConfig &cfg) {
 	//warn the user if the precipitation miss proper re-accumulation
 	const bool HS_driven = cfg.get("ENFORCE_MEASURED_SNOW_HEIGHTS", "Snowpack");
 	if (mode != "OPERATIONAL" && !HS_driven) {
-		const bool psum_key_exists = cfg.keyExistsRegex("PSUM::resample\\d+|PSUM::RESAMPLE\\d+", "Interpolations1D");
+		const bool psum_key_exists = cfg.keyExistsRegex("PSUM::[Re][Ee][Ss][As][Mm][Pp][Ll][Ee]\\d+", "Interpolations1D");
 		std::vector<std::pair<std::string, std::string>> vecAlgos;
 		if (psum_key_exists) {
 			vecAlgos = cfg.getValues("PSUM::RESAMPLE", "Interpolations1D");
 		}
+
 		auto accumulateIndex = [](const std::vector<std::pair<std::string, std::string>>& vec) {
-			for (size_t ii; ii<vec.size(); ii++) {
-				if (IOUtils::strToUpper(vec[ii].second) == "ACCUMULATE") return static_cast<double>(ii);
+			for (size_t ii=0; ii<vec.size(); ii++) {
+				if (IOUtils::strToUpper(vec[ii].second) == "ACCUMULATE") {
+					std::regex pattern ("^[A-Z]+::resample(\\d+)$", std::regex::icase);
+					std::smatch match;
+					if (std::regex_search(vec[ii].first, match, pattern)) { // first is the original key
+						return std::stoi(match[1]);
+					} else {
+						throw IOException("ACCUMULATE key " + vec[ii].first + " does not contain a valid index; I.e. it does not match the pattern PARAM::resample#",AT);
+					}
+				}
 			}
-			return IOUtils::nodata;
+			return static_cast<int>(IOUtils::nodata);
 		};
 		if (vecAlgos.empty() || accumulateIndex(vecAlgos) == IOUtils::nodata) {
 			std::cerr << "[W] The precipitation should be re-accumulated over CALCULATION_STEP_LENGTH, not doing it is most probably an error!\n";
