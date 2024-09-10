@@ -886,16 +886,16 @@ inline void addSpecialKeys(SnowpackConfig &cfg)
 		auto accumulateIndex = [](const std::vector<std::pair<std::string, std::string>>& vec) {
 			for (size_t ii=0; ii<vec.size(); ii++) {
 				if (IOUtils::strToUpper(vec[ii].second) == "ACCUMULATE") {
-				    std::regex pattern ("^[A-Z]+::resample(\\d+)$", std::regex::icase);
+					std::regex pattern ("^[A-Z]+::resample(\\d+)$", std::regex::icase);
 					std::smatch match;
 					if (std::regex_search(vec[ii].first, match, pattern)) { // first is the original key
-                        return static_cast<double>(std::stoi(match[1]));
+						return std::stoi(match[1]);
 					} else {
-				        throw IOException("ACUUMULATE key " + vec[ii].first + " does not contain a valid index; I.e. it does not match the pattern PARAM::resample#",AT);
+						throw IOException("ACCUMULATE key " + vec[ii].first + " does not contain a valid index; I.e. it does not match the pattern PARAM::resample#",AT);
 					}
 				}
 			}
-			return IOUtils::nodata;
+			return static_cast<int>(IOUtils::nodata);
 		};
 		if (vecAlgos.empty() || accumulateIndex(vecAlgos) == IOUtils::nodata) {
 			std::cerr << "[W] The precipitation should be re-accumulated over CALCULATION_STEP_LENGTH, not doing it is most probably an error!\n";
