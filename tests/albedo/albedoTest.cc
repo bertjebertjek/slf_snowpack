@@ -25,6 +25,8 @@
 #include <sstream>
 #include <ctime>
 
+#include <regex>
+
 #ifdef _MSC_VER
 /*
  This software contains code under BSD license (namely, getopt for Visual C++).
