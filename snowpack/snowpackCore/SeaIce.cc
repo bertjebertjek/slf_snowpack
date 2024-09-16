@@ -66,7 +66,7 @@ const double SeaIce::InitSnowSalinity = 0.;
  ************************************************************/
 
 SeaIce::SeaIce():
-	SeaLevel(0.), ForcedSeaLevel(IOUtils::nodata), FreeBoard (0.), IceSurface(0.), IceSurfaceNode(0), OceanHeatFlux(0.), BottomSalFlux(0.), TopSalFlux(0.), check_initial_conditions(false), salinityprofile(SINUSSAL) {}
+	SeaLevel(0.), ForcedSeaLevel(IOUtils::nodata), FreeBoard (0.), IceSurface(0.), IceSurfaceNode(0), OceanHeatFlux(0.), BottomSalFlux(0.), TopSalFlux(0.), check_initial_conditions(false), salinityprofile(SINUSSAL), thermalmodel(ASSUR1958) {}
 
 SeaIce& SeaIce::operator=(const SeaIce& source) {
 	if(this != &source) {
@@ -101,6 +101,24 @@ void SeaIce::ConfigSeaIce(const SnowpackConfig& i_cfg) {
 	} else {
 		prn_msg( __FILE__, __LINE__, "err", Date(), "Unknown salinity profile (key: SALINITYPROFILE).");
 		throw;
+	}
+
+	// Read thermal model for sea ice to use
+	std::string tmp_thermalmodel;
+	i_cfg.getValue("THERMALMODEL", "SnowpackSeaice", tmp_thermalmodel, mio::IOUtils::nothrow);
+	if(!tmp_thermalmodel.empty()) {
+		if (tmp_thermalmodel=="IGNORE") {
+			thermalmodel=IGNORE;
+		} else if (tmp_thermalmodel=="ASSUR1958") {
+			thermalmodel=ASSUR1958;
+		} else if (tmp_thermalmodel=="VANCOPPENOLLE2019") {
+			thermalmodel=VANCOPPENOLLE2019;
+		} else if (tmp_thermalmodel=="VANCOPPENOLLE2019_M") {
+			thermalmodel=VANCOPPENOLLE2019_M;
+		} else {
+			prn_msg( __FILE__, __LINE__, "err", Date(), "Unknown thermal model (key: THERMALMODEL).");
+			throw;
+		}
 	}
 
 	// Read whether or not to check the initial conditions
@@ -332,15 +350,87 @@ void SeaIce::calculateMeltingTemperature(ElementData& Edata)
 
 
 /**
+ * @brief Calculate brine salinity as a function of temperature
+ * @version 17.12: initial version
+ * @param T: Temperature (K)
+ */
+double SeaIce::calculateBrineSalinity(const double& T)
+{
+	if (thermalmodel == IGNORE) {
+		return IOUtils::nodata;
+	} else if (thermalmodel == ASSUR1958) {
+		// See: Assur, A., Composition of sea ice and its tensile strength, in Arctic Sea Ice, N.  A.  S. N.  R.  C. Publ., 598, 106-138, 1958.
+		const double tc = IOUtils::K_TO_C(T);
+		return tc/-SeaIce::mu;
+	} else if (thermalmodel == VANCOPPENOLLE2019) {
+		// See Eq. 10 in: Vancoppenolle, M., Madec, G., Thomas, M., & McDougall, T. J. (2019). Thermodynamics of sea ice phase composition revisited. Journal of Geophysical Research: Oceans, 124, 615–634. doi: 10.1029/2018JC014611 
+		const double a1 = -0.00535;
+		const double a2 = -0.519;
+		const double a3 = -18.7;
+		const double tc = IOUtils::K_TO_C(T);
+		return a1*tc*tc*tc + a2*tc*tc + a3*tc;
+	} else if (thermalmodel == VANCOPPENOLLE2019_M) {
+		// A quadratic fit to Eq. 10 in Vancoppenolle et al. (2019)
+		const double a1 = -0.16055612425953938;
+		const double a2 = -13.296596377964793;
+		const double tc = IOUtils::K_TO_C(T);
+		return std::min(270., a1 * tc * tc + a2 * tc);
+	} else {
+		throw; return IOUtils::nodata;
+	}
+}
+
+
+
+/**
  * @brief Calculate melting temperature as function of brine salinity
  * @version 17.12: initial version
  * @param Sal: Brine salinity (PSU, which is g/kg)
  */
 double SeaIce::calculateMeltingTemperature(const double& Sal)
 {
-	// See: Bitz, C. M., and W. H. Lipscomb (1999), An energy-conserving thermodynamic model of sea ice, J. Geophys. Res., 104(C7), 15669–15677, doi:10.1029/1999JC900100.
-	//      who is citing: Assur, A., Composition of sea ice and its tensile strength, in Arctic Sea Ice, N.  A.  S. N.  R.  C. Publ., 598, 106-138, 1958.
-	return IOUtils::C_TO_K(-SeaIce::mu * Sal);
+	if (thermalmodel == IGNORE) {
+		return IOUtils::C_TO_K(0.);
+	} else if (thermalmodel == ASSUR1958) {
+		return IOUtils::C_TO_K(-SeaIce::mu * Sal);
+	} else if (thermalmodel == VANCOPPENOLLE2019) {
+		const double a1 = -1.519198358972389e-06;
+		const double a2 = -1.2231282340681517e-05;
+		const double a3 = -0.036625542697786166;
+		const double t = a1 * Sal * Sal * Sal + a2 * Sal * Sal + a3 * Sal;
+		return IOUtils::C_TO_K(t);
+	} else if (thermalmodel == VANCOPPENOLLE2019_M) {
+		const double a1 = -0.16055612425953938;
+		const double a2 = -13.296596377964793;
+		const double t = -((sqrt(4.*a1*std::min(270.,Sal)+a2*a2)+a2)/a1)/2.;
+		return IOUtils::C_TO_K(t);
+	} else {
+		throw; return IOUtils::nodata;
+	}
+}
+
+
+/**
+ * @brief Returns the derivative of the salinity-melting point curve (dTm/dS)
+ */
+double SeaIce::getMu(const double& Sal)
+{
+	if (thermalmodel == IGNORE) {
+		return 0.;
+	} else if (thermalmodel == ASSUR1958) {
+		return -SeaIce::mu;
+	} else if (thermalmodel == VANCOPPENOLLE2019) {
+		const double a1 = -1.519198358972389e-06;
+		const double a2 = -1.2231282340681517e-05;
+		const double a3 = -0.036625542697786166;
+		return 3. * a1 * Sal * Sal + 2. * a2 * Sal + a3;
+	} else if (thermalmodel == VANCOPPENOLLE2019_M) {
+		const double a1 = -0.16055612425953938;
+		const double a2 = -13.296596377964793;
+		return -1./sqrt(4.*a1*std::min(270.,Sal)+a2*a2);
+	} else {
+		throw; return IOUtils::nodata;
+	}
 }
 
 
@@ -678,6 +768,7 @@ double SeaIce::getTotSalinity(const SnowStation& Xdata)
 	return ret;
 }
 
+
 /**
  * @brief Initializes a SnowStation object for appropriate sea ice conditions \n
  * First, water and ice content is calculated, while maintaining initial bulk salinity and temperature
@@ -702,7 +793,7 @@ void SeaIce::InitSeaIce(SnowStation& Xdata)
 			Xdata.Edata[e].salinity = 0.;
 		} else {
 			// A given temperature corresponds to a specific brine salinity
-			const double BrineSal = (Xdata.Edata[e].Te - Constants::meltfreeze_tk) / -SeaIce::mu;
+			const double BrineSal = calculateBrineSalinity(Xdata.Edata[e].Te);
 			if (BrineSal <= 0. && Xdata.Edata[e].salinity > 0.) {
 				prn_msg( __FILE__, __LINE__, "err", Date(), "Inconsistent initial condition at layer %d / %d.\n    For the initial layer temperature (%lf), brine salinity is %lf, while prescribed bulk salinity is %lf. This cannot be made consistent.", e, nE, Xdata.Edata[e].Te, BrineSal, Xdata.Edata[e].salinity);
 				inconsistent_layer=true;
