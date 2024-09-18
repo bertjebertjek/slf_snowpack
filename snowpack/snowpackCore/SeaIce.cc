@@ -432,7 +432,7 @@ std::pair<double, double> SeaIce::getMu(const double& Sal)
 	} else if (thermalmodel == VANCOPPENOLLE2019_M) {
 		const double a1 = -0.16055612425953938;
 		const double a2 = -13.296596377964793;
-		mu1 = (Sal > 270.) ? (0.) : (-1./sqrt(4.*a1*std::min(270.,Sal)+a2*a2));
+		mu1 = (-1./sqrt(4.*a1*std::min(270.,Sal)+a2*a2));
 	}
 	mu0 = this->calculateMeltingTemperature(Sal) - mu1 * Sal;
 	return std::make_pair(mu0, mu1);
