@@ -1075,9 +1075,10 @@ bool Snowpack::compTemperatureProfile(const CurrentMeteo& Mdata, SnowStation& Xd
 					const double tmp_T = 0.5 * (U[e+1] + U[e]);
 					const double tmp_Theta = Xdata.Edata[e].theta[WATER] - 0.5 * (dth_i_up[e] + dth_i_down[e]) * f;
 					const double BrineSal_new = (tmp_Theta == 0.) ? (0.) : (Xdata.Edata[e].salinity / tmp_Theta);
-					const double mu = -Xdata.Seaice->getMu(BrineSal_new);
-					if(mu > Constants::eps2) {
-						Xdata.Edata[e].meltfreeze_tk = -1. * (sqrt(A * f * A * f * tmp_T * tmp_T + (2. * A * f * tmp_Theta - 2. * A * f * A * f * Constants::meltfreeze_tk) * tmp_T + tmp_Theta * tmp_Theta - 2. * A * f * Constants::meltfreeze_tk * tmp_Theta + 4. * A * f * mu * Xdata.Edata[e].salinity + A * f * A * f * Constants::meltfreeze_tk * Constants::meltfreeze_tk) - A * f * tmp_T - tmp_Theta - A * f * Constants::meltfreeze_tk) / (2. * A * f);
+
+					std::pair<double, double> mu = Xdata.Seaice->getMu(BrineSal_new);
+					if(mu.second < -Constants::eps2) {
+						Xdata.Edata[e].meltfreeze_tk = -1. * (sqrt(A * f * A * f * tmp_T * tmp_T + (2. * A * f * tmp_Theta - 2. * A * f * A * f * mu.first) * tmp_T + tmp_Theta * tmp_Theta - 2. * A * f * mu.first * tmp_Theta - 4. * A * f * mu.second * Xdata.Edata[e].salinity + A * f * A * f * mu.first * mu.first) - A * f * tmp_T - tmp_Theta - A * f * mu.first) / (2. * A * f);
 					} else {
 						Xdata.Edata[e].meltfreeze_tk = IOUtils::C_TO_K(0.);
 					}

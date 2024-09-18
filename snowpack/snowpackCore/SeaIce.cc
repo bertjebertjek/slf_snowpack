@@ -411,26 +411,31 @@ double SeaIce::calculateMeltingTemperature(const double& Sal)
 
 
 /**
- * @brief Returns the derivative of the salinity-melting point curve (dTm/dS)
+ * @brief Returns the tangent line to the salinity-melting point curve
+ * General tangent line equation:
+ *     T = mu0 + mu1 * Sal,
+ * with mu1 = dTm/dS
  */
-double SeaIce::getMu(const double& Sal)
+std::pair<double, double> SeaIce::getMu(const double& Sal)
 {
+	double mu0 = IOUtils::nodata;
+	double mu1 = IOUtils::nodata;
 	if (thermalmodel == IGNORE) {
-		return 0.;
+		mu1 = 0.;
 	} else if (thermalmodel == ASSUR1958) {
-		return -SeaIce::mu;
+		mu1 = -SeaIce::mu;
 	} else if (thermalmodel == VANCOPPENOLLE2019) {
 		const double a1 = -1.519198358972389e-06;
 		const double a2 = -1.2231282340681517e-05;
 		const double a3 = -0.036625542697786166;
-		return 3. * a1 * Sal * Sal + 2. * a2 * Sal + a3;
+		mu1 = 3. * a1 * Sal * Sal + 2. * a2 * Sal + a3;
 	} else if (thermalmodel == VANCOPPENOLLE2019_M) {
 		const double a1 = -0.16055612425953938;
 		const double a2 = -13.296596377964793;
-		return -1./sqrt(4.*a1*std::min(270.,Sal)+a2*a2);
-	} else {
-		throw; return IOUtils::nodata;
+		mu1 = (Sal > 270.) ? (0.) : (-1./sqrt(4.*a1*std::min(270.,Sal)+a2*a2));
 	}
+	mu0 = this->calculateMeltingTemperature(Sal) - mu1 * Sal;
+	return std::make_pair(mu0, mu1);
 }
 
 

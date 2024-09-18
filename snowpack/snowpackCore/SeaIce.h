@@ -87,7 +87,7 @@ class SeaIce {
 		friend std::iostream& operator>>(std::iostream& is, SeaIce& data);
 
 		void calculateMeltingTemperature(ElementData& Edata);
-		double getMu(const double& Sal);
+		std::pair<double, double>getMu(const double& Sal);
 		void compSalinityProfile(SnowStation& Xdata);
 		void updateFreeboard(SnowStation& Xdata);
 		double findIceSurface(SnowStation& Xdata);
