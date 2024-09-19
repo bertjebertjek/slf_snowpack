@@ -368,7 +368,7 @@ double SeaIce::calculateBrineSalinity(const double& T)
 		const double a2 = -0.519;
 		const double a3 = -18.7;
 		const double tc = IOUtils::K_TO_C(T);
-		return a1*tc*tc*tc + a2*tc*tc + a3*tc;
+		return std::min(300., a1*tc*tc*tc + a2*tc*tc + a3*tc);
 	} else if (thermalmodel == VANCOPPENOLLE2019_M) {
 		// A quadratic fit to Eq. 10 in Vancoppenolle et al. (2019)
 		const double a1 = -0.16055612425953938;
@@ -394,11 +394,34 @@ double SeaIce::calculateMeltingTemperature(const double& Sal)
 	} else if (thermalmodel == ASSUR1958) {
 		return IOUtils::C_TO_K(-SeaIce::mu * Sal);
 	} else if (thermalmodel == VANCOPPENOLLE2019) {
-		const double a1 = -1.519198358972389e-06;
-		const double a2 = -1.2231282340681517e-05;
-		const double a3 = -0.036625542697786166;
-		const double t = a1 * Sal * Sal * Sal + a2 * Sal * Sal + a3 * Sal;
-		return IOUtils::C_TO_K(t);
+		const double a1 = -0.00535;
+		const double a2 = -0.519;
+		const double a3 = -18.7;
+
+		// Normalize the cubic equation:
+		double p = a2 / a1;
+		double q = a3 / a1;
+		double r = -((Sal > 300.)?(300.):(Sal)) / a1;
+
+		// Calculate the depressed cubic:
+		double a = q - (p * p / 3.0);
+		double b = 2.0 * p * p * p / 27.0 - (p * q / 3.) + r;
+
+		// Calculate discriminant
+		double disc = (b / 2.) * (b / 2.) + (a / 3.) * (a / 3.) * (a / 3.);
+
+		double rt1 = 0.;
+		if (disc > 0.) {
+			// One real root. Use Cardano's formula:
+			double C = cbrt(-b / 2. + sqrt(disc));
+			double D = cbrt(-b / 2. - sqrt(disc));
+
+			rt1 = C + D - (p / 3.);
+			return IOUtils::C_TO_K(rt1);
+		} else {
+			// We should not end up here...
+			throw;
+		}
 	} else if (thermalmodel == VANCOPPENOLLE2019_M) {
 		const double a1 = -0.16055612425953938;
 		const double a2 = -13.296596377964793;
@@ -425,10 +448,14 @@ std::pair<double, double> SeaIce::getMu(const double& Sal)
 	} else if (thermalmodel == ASSUR1958) {
 		mu1 = -SeaIce::mu;
 	} else if (thermalmodel == VANCOPPENOLLE2019) {
-		const double a1 = -1.519198358972389e-06;
-		const double a2 = -1.2231282340681517e-05;
-		const double a3 = -0.036625542697786166;
-		mu1 = 3. * a1 * Sal * Sal + 2. * a2 * Sal + a3;
+		// Numerical differentiation:
+		if(Sal < Constants::eps) {
+			// Left window
+			mu1 = (this->calculateMeltingTemperature(Sal - Constants::eps) - this->calculateMeltingTemperature(Sal - 2.*Constants::eps)) / Constants::eps;
+		} else {
+			// Centered window
+			mu1 = (this->calculateMeltingTemperature(Sal + Constants::eps) - this->calculateMeltingTemperature(Sal - Constants::eps)) / (2. * Constants::eps);
+		}
 	} else if (thermalmodel == VANCOPPENOLLE2019_M) {
 		const double a1 = -0.16055612425953938;
 		const double a2 = -13.296596377964793;
