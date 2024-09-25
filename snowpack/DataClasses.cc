@@ -2308,7 +2308,7 @@ void SnowStation::reduceNumberOfElements(const size_t& rnE)
 			} else { // Removing elements for negative length L
 				// Under the condition of multiple element removals, Edata[e].L can occasionally represent a compounded element,
 				// such that it doesn't reflect the true height change. Better to use the nodal positions:
-				// FIXME: should this not be negative to account for elements that are completelz removed?
+				// FIXME: should this not be negative to account for elements that are completely removed?
 				dL += (Ndata[e+1].z - Ndata[e].z);
 			}
 		} else {
