@@ -894,6 +894,9 @@ inline void addSpecialKeys(SnowpackConfig &cfg)
 				std::cerr << "[W] The precipitation should be re-accumulated over CALCULATION_STEP_LENGTH (currently, over " <<  psum_accumulate << "s)\n";
 		}
 	}
+	if (detect_grass && !HS_driven) {
+		throw mio::IOException("[E] DETECT_GRASS is TRUE while ENFORCE_MEASURED_SNOW_HEIGHTS is FALSE. Cannot continue simulation, because snow height is used to detect grass.", AT);
+	}
 }
 
 inline void writeForcing(Date d1, const Date& d2, const double& Tstep, IOManager &io)
