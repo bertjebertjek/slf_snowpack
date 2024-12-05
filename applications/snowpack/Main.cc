@@ -882,7 +882,7 @@ inline void addSpecialKeys(SnowpackConfig &cfg)
 	if (mode != "OPERATIONAL" && !HS_driven) {
 		int psum_resampling_index = IOUtils::inodata;
 		const std::vector<std::pair<std::string, std::string>> vecAlgos( cfg.getValues("PSUM::RESAMPLE", "Interpolations1D") );
-		for (const auto key : vecAlgos) {
+		for (const auto &key : vecAlgos) {
 			if (IOUtils::strToUpper(key.second) == "ACCUMULATE") {
 				std::regex pattern ("PSUM::RESAMPLE(\\d+)$", std::regex::icase);
 				std::smatch match;
