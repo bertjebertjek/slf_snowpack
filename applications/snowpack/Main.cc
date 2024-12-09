@@ -840,10 +840,6 @@ inline void addSpecialKeys(SnowpackConfig &cfg)
 		if (useCanopyModel) {
 			throw mio::IOException("Please don't set CANOPY to 1 in OPERATIONAL mode", AT);
 		}
-		if (!detect_grass){
-			cfg.addKey("DETECT_GRASS", "SnowpackAdvanced", "true");
-			detect_grass = true;
-		}
 	}
 
 	if (detect_grass) {
