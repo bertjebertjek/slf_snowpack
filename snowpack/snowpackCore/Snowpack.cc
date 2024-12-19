@@ -1413,7 +1413,7 @@ void Snowpack::setHydrometeorMicrostructure(const CurrentMeteo& Mdata, const boo
 	elem.metamo = 0.;
 }
 
-void Snowpack::fillNewSnowElement(const CurrentMeteo& Mdata, const double& length, const double& density,
+void Snowpack::fillNewSnowElement(const CurrentMeteo& Mdata, const double& length, const double& density, double& theta_water,
                                   const bool& is_surface_hoar, const unsigned short& number_of_solutes, ElementData &elem)
 {
 	//basic parameters
@@ -1422,17 +1422,33 @@ void Snowpack::fillNewSnowElement(const CurrentMeteo& Mdata, const double& lengt
 	elem.L0 = elem.L = length;
 	elem.Rho = density;
 	assert(elem.Rho>=0. || elem.Rho==IOUtils::nodata); //we want positive density
-	elem.M = elem.L0*elem.Rho; // Mass
-	assert(elem.M>=0.); //mass must be positive
 
 	// Volumetric components
 	elem.theta[SOIL]  = 0.0;
 	elem.theta[ICE]   = elem.Rho/Constants::density_ice;
 	elem.theta_i_reservoir = 0.0;
 	elem.theta_i_reservoir_cumul = 0.0;
-	elem.theta[WATER] = 0.0;
-	elem.theta[WATER_PREF] = 0.0;
-	elem.theta[AIR]   = 1. - elem.theta[ICE];
+	if (theta_water > 0.) {
+		if (watertransportmodel_snow == "BUCKET") {
+			// In the BUCKET scheme, we add up to residual water content
+			theta_water = std::min(theta_water, elem.snowResidualWaterContent(elem.theta[ICE]));
+		}
+		if (watertransportmodel_snow == "RICHARDSEQUATION") {
+			// In the RICHARDSEQUATION scheme, we add up to max. 50% pore space
+			theta_water = std::min(theta_water, .5 * (1. - elem.theta[ICE]));
+		}
+		elem.theta[WATER] = theta_water;
+		elem.theta[WATER_PREF] = 0.0;
+	} else {
+		elem.theta[WATER] = theta_water;
+		elem.theta[WATER_PREF] = 0.0;
+	}
+	elem.theta[AIR]   = 1. - elem.theta[ICE] - elem.theta[WATER] - elem.theta[WATER_PREF];
+	elem.updDensity();
+	elem.M = elem.L0*elem.Rho; // Mass
+	assert(elem.Rho>=0. || elem.Rho==IOUtils::nodata); //we want positive density
+	assert(elem.M>=0.); //mass must be positive
+
 	for (unsigned short ii = 0; ii < number_of_solutes; ii++) {
 		elem.conc[ICE][ii]   = Mdata.conc[ii]*Constants::density_ice/Constants::density_water;
 		elem.conc[WATER][ii] = Mdata.conc[ii];
@@ -1537,7 +1553,8 @@ void Snowpack::compTechnicalSnow(const CurrentMeteo& Mdata, SnowStation& Xdata, 
 	// Fill the element data
 	for (size_t e = nOldE; e < nNewE; e++) { //loop over the elements
 		const double length = (NDS[e+1].z + NDS[e+1].u) - (NDS[e].z + NDS[e].u);
-		fillNewSnowElement(Mdata, length, rho_hn, false, Xdata.number_of_solutes, EMS[e]);
+		double theta_w_rain = 0.;
+		fillNewSnowElement(Mdata, length, rho_hn, theta_w_rain, false, Xdata.number_of_solutes, EMS[e]);
 
 		// Now give specific properties for technical snow, consider liquid water
 		// Assume that the user does not specify unreasonably high liquid water contents.
@@ -1595,7 +1612,7 @@ void Snowpack::compTechnicalSnow(const CurrentMeteo& Mdata, SnowStation& Xdata, 
  * @param Xdata Snow cover data
  * @param cumu_precip cumulated amount of precipitation (kg m-2)
  */
-void Snowpack::compSnowFall(const CurrentMeteo& Mdata, SnowStation& Xdata, double& cumu_precip,
+void Snowpack::compSnowFall(CurrentMeteo& Mdata, SnowStation& Xdata, double& cumu_precip,
                             SurfaceFluxes& Sdata)
 {
 	if (Mdata.psum_tech!=Constants::undefined && Mdata.psum_tech > 0.) {
@@ -1809,6 +1826,14 @@ void Snowpack::compSnowFall(const CurrentMeteo& Mdata, SnowStation& Xdata, doubl
 			vector<NodeData>& NDS = Xdata.Ndata;
 			vector<ElementData>& EMS = Xdata.Edata;
 
+			// Consider mixed precipitation (i.e., inlcuding rain)
+			double total_rainwater = 0.;	// [kg/m2]
+			if (Mdata.psum > 0. && Mdata.psum_ph > 0.) {
+				// There is some rain
+				total_rainwater = (Mdata.psum * Mdata.psum_ph);
+				t_surf = Constants::meltfreeze_tk;
+			}
+
 			// Create hoar layer
 			if (nHoarE > 0) {
 				// Since mass of hoar was already added to element below, substract....
@@ -1879,7 +1904,10 @@ void Snowpack::compSnowFall(const CurrentMeteo& Mdata, SnowStation& Xdata, doubl
 				const bool is_surface_hoar = (nHoarE && (e == nOldE));
 				const double length = (NDS[e+1].z + NDS[e+1].u) - (NDS[e].z + NDS[e].u);
 				const double density = (is_surface_hoar)? hoar_density_buried : rho_hn;
-				fillNewSnowElement(Mdata, length, density, is_surface_hoar, Xdata.number_of_solutes, EMS[e]);
+				double theta_w_rain = total_rainwater / (Constants::density_water * hn);
+				fillNewSnowElement(Mdata, length, density, theta_w_rain, is_surface_hoar, Xdata.number_of_solutes, EMS[e]);
+				Sdata.mass[SurfaceFluxes::MS_RAIN] += theta_w_rain * Constants::density_water * EMS[e].L;
+				Mdata.psum -= theta_w_rain * Constants::density_water * EMS[e].L;
 				// To satisfy the energy balance, we should trigger an explicit treatment of the top boundary condition of the energy equation
 				// when new snow falls on top of wet snow or melting soil. This can be done by putting a tiny amount of liquid water in the new snow layers.
 				// Note that we use the same branching condition as in the function Snowpack::neumannBoundaryConditions(...)
