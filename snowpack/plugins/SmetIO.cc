@@ -33,8 +33,8 @@ using namespace mio;
  * <a href="https://meteoio.slf.ch">MeteoIO</a> pre-processing library documentation (under
  * <i>"Available plugins and usage"</i>, then <i>"smet"</i>).
  *
-* @note There is also a python library, <a href="https://gitlabext.wsl.ch/patrick.leibersperger/pysmet">pySMET</a> available, to read SMET files.
- * 
+* @note There is also a python library, <a href="https://code.wsl.ch/patrick.leibersperger/snowpat">snowpat</a> available, to read SMET files.
+ *
  * @section fluxes_ts Fluxes timeseries
  * These files are very regular SMET files with a large number of fields.
  *
@@ -1260,7 +1260,7 @@ void SmetIO::writeTimeSeriesData(const SnowStation& Xdata, const SurfaceFluxes& 
 		data.push_back( (perp_to_slope? Hdata.psum24/cos_sl : Hdata.psum24) ); vec_precision.push_back(dflt_precision); vec_width.push_back(dflt_width);
 		const double penetrationDepth = StabilityAlgorithms::compPenetrationDepth(Xdata);
 		data.push_back( penetrationDepth ); vec_precision.push_back(dflt_precision); vec_width.push_back(dflt_width);
-		
+
 	}
 
 	if (out_soileb) {
