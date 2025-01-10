@@ -1070,7 +1070,7 @@ inline void real_main (int argc, char *argv[])
 	if (!vecStationIDs.empty()) { //operational use case: stationIDs provided on the command line
 		for (size_t i_stn=0; i_stn<vecStationIDs.size(); i_stn++) {
 			stringstream ss;
-			ss << "STATION" << i_stn+1;
+			ss << "METEOFILE" << i_stn+1;
 			cfg.addKey(ss.str(), "Input", vecStationIDs[i_stn]);
 		}
 	}
