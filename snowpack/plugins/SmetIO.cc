@@ -952,7 +952,7 @@ std::string SmetIO::getFieldsHeader(const SnowStation& Xdata) const
 	if (out_meteo)
 		os << "TA TSS_mod TSS_meas T_bottom RH VW VW_drift DW MS_Snow HS_mod HS_meas" << " "; //Air temperature, snow surface temperature (modeled and measured), temperature at bottom of snow/soil pack (degC)
 	if (out_haz)
-		os << "hoar_size wind_trans24 HN3 HN6 HN12 HN24 HN72_24 PSUM24 ski_pen" << " ";//surface hoar size (mm), 24h drift index (cm), 3 hours height of new snow HN (cm), 6 hours HN, 12 hours HN, 24 hours HN, 3d sum of daily new snow depths (cm), 24 h new snow water equivalent (kg m-2), skier penetration depth (m)
+		os << "hoar_size wind_trans24 HN3 HN6 HN12 HN24 HN72_24 HNW24 ski_pen" << " ";//surface hoar size (mm), 24h drift index (cm), 3 hours height of new snow HN (cm), 6 hours HN, 12 hours HN, 24 hours HN, 3d sum of daily new snow depths (cm), 24 h new snow water equivalent (kg m-2), skier penetration depth (m)
 	if (out_soileb)
 		os << "dIntEnergySoil meltFreezeEnergySoil ColdContentSoil" << " ";
 	if (out_mass) {
@@ -1051,7 +1051,7 @@ void SmetIO::writeTimeSeriesHeader(const SnowStation& Xdata, const double& tz, s
 		plot_max << "" << " ";
 	}
 	if (out_haz) {
-		//"hoar_size wind_trans24 HN3 HN6 HN12 HN24 HN72_24 HNW24(WC24)"
+		//"hoar_size wind_trans24 HN3 HN6 HN12 HN24 HN72_24 HNW24(WC24) ski_pen"
 		plot_description << "hoar_size  24h_wind_drift 3h_height_of_new_snow 6h_height_of_new_snow 12h_height_of_new_snow 24h_height_of_new_snow 3d_sum_of_daily_height_of_new_snow 24h_percipitation skier_penetration_depth" << " ";
 		plot_units << "m m m m m m m m m" << " ";
 		units_offset << "0 0 0 0 0 0 0 0 0" << " ";
