@@ -1051,7 +1051,7 @@ void SmetIO::writeTimeSeriesHeader(const SnowStation& Xdata, const double& tz, s
 		plot_max << "" << " ";
 	}
 	if (out_haz) {
-		//"hoar_size wind_trans24 HN3 HN6 HN12 HN24 HN72_24 PSUM24(WC24)"
+		//"hoar_size wind_trans24 HN3 HN6 HN12 HN24 HN72_24 HNW24(WC24)"
 		plot_description << "hoar_size  24h_wind_drift 3h_height_of_new_snow 6h_height_of_new_snow 12h_height_of_new_snow 24h_height_of_new_snow 3d_sum_of_daily_height_of_new_snow 24h_percipitation skier_penetration_depth" << " ";
 		plot_units << "m m m m m m m m m" << " ";
 		units_offset << "0 0 0 0 0 0 0 0 0" << " ";
@@ -1253,7 +1253,7 @@ void SmetIO::writeTimeSeriesData(const SnowStation& Xdata, const SurfaceFluxes& 
 		data.push_back( (perp_to_slope? Hdata.hn12/cos_sl : Hdata.hn12) ); vec_precision.push_back(dflt_precision); vec_width.push_back(dflt_width);
 		data.push_back( (perp_to_slope? Hdata.hn24/cos_sl : Hdata.hn24) ); vec_precision.push_back(dflt_precision); vec_width.push_back(dflt_width);
 		data.push_back( (perp_to_slope? Hdata.hn72_24/cos_sl : Hdata.hn72_24) ); vec_precision.push_back(dflt_precision); vec_width.push_back(dflt_width);
-		data.push_back( (perp_to_slope? Hdata.psum24/cos_sl : Hdata.psum24) ); vec_precision.push_back(dflt_precision); vec_width.push_back(dflt_width);
+		data.push_back( (perp_to_slope? Hdata.hnw24/cos_sl : Hdata.hnw24) ); vec_precision.push_back(dflt_precision); vec_width.push_back(dflt_width);
 		const double penetrationDepth = StabilityAlgorithms::compPenetrationDepth(Xdata);
 		data.push_back( penetrationDepth ); vec_precision.push_back(dflt_precision); vec_width.push_back(dflt_width);
 
