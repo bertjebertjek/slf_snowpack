@@ -693,7 +693,7 @@ inline void getOutputControl(MainControl& mn_ctrl, const mio::Date& step, const 
 inline bool readSlopeMeta(mio::IOManager& io, SnowpackIO& snowpackio, SnowpackConfig& cfg, const size_t& i_stn,
                    Slope& slope, mio::Date &current_date, vector<SN_SNOWSOIL_DATA> &vecSSdata,
                    vector<SnowStation> &vecXdata, ZwischenData &sn_Zdata, CurrentMeteo& Mdata,
-                   double &wind_scaling_factor, double &time_count_deltaHS)
+                   double &time_count_deltaHS)
 {
 	std::string snowfile;
 	stringstream ss;
@@ -1129,7 +1129,7 @@ inline void real_main (int argc, char *argv[])
 		meteoRead_timer.start();
 		if (mode == "OPERATIONAL")
 			cfg.addKey("PERP_TO_SLOPE", "SnowpackAdvanced", "false");
-		const bool read_slope_status = readSlopeMeta(io, snowpackio, cfg, i_stn, slope, current_date, vecSSdata, vecXdata, sn_Zdata, Mdata, wind_scaling_factor, time_count_deltaHS);
+		const bool read_slope_status = readSlopeMeta(io, snowpackio, cfg, i_stn, slope, current_date, vecSSdata, vecXdata, sn_Zdata, Mdata, time_count_deltaHS);
 		meteoRead_timer.stop();
 		if (!read_slope_status) continue; //something went wrong, move to the next station
 
