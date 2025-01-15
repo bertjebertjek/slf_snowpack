@@ -1903,8 +1903,12 @@ void Snowpack::compSnowFall(CurrentMeteo& Mdata, SnowStation& Xdata, double& cum
 				const double density = (is_surface_hoar)? hoar_density_buried : rho_hn;
 				double theta_w_rain = total_rainwater / (Constants::density_water * hn);
 				fillNewSnowElement(Mdata, length, density, theta_w_rain, is_surface_hoar, Xdata.number_of_solutes, EMS[e]);
-				Sdata.mass[SurfaceFluxes::MS_RAIN] += theta_w_rain * Constants::density_water * EMS[e].L;
-				Mdata.psum -= theta_w_rain * Constants::density_water * EMS[e].L;
+				const double absorbed_rainfall = theta_w_rain * Constants::density_water * EMS[e].L;
+				Sdata.mass[SurfaceFluxes::MS_RAIN] += absorbed_rainfall;
+				// Update the psum_ph
+				Mdata.psum_ph = (Mdata.psum * Mdata.psum_ph - absorbed_rainfall) / (Mdata.psum - absorbed_rainfall);
+				// Update psum
+				Mdata.psum -= absorbed_rainfall;
 				// To satisfy the energy balance, we should trigger an explicit treatment of the top boundary condition of the energy equation
 				// when new snow falls on top of wet snow or melting soil. This can be done by putting a tiny amount of liquid water in the new snow layers.
 				// Note that we use the same branching condition as in the function Snowpack::neumannBoundaryConditions(...)
