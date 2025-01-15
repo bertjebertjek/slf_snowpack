@@ -1437,12 +1437,9 @@ void Snowpack::fillNewSnowElement(const CurrentMeteo& Mdata, const double& lengt
 			// In the RICHARDSEQUATION scheme, we add up to max. 50% pore space
 			theta_water = std::min(theta_water, .5 * (1. - elem.theta[ICE]));
 		}
-		elem.theta[WATER] = theta_water;
-		elem.theta[WATER_PREF] = 0.0;
-	} else {
-		elem.theta[WATER] = theta_water;
-		elem.theta[WATER_PREF] = 0.0;
 	}
+	elem.theta[WATER] = theta_water;
+	elem.theta[WATER_PREF] = 0.0;
 	elem.theta[AIR]   = 1. - elem.theta[ICE] - elem.theta[WATER] - elem.theta[WATER_PREF];
 	elem.updDensity();
 	elem.M = elem.L0*elem.Rho; // Mass
