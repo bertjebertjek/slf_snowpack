@@ -1428,16 +1428,8 @@ void Snowpack::fillNewSnowElement(const CurrentMeteo& Mdata, const double& lengt
 	elem.theta[ICE]   = elem.Rho/Constants::density_ice;
 	elem.theta_i_reservoir = 0.0;
 	elem.theta_i_reservoir_cumul = 0.0;
-	if (theta_water > 0.) {
-		if (watertransportmodel_snow == "BUCKET") {
-			// In the BUCKET scheme, we add up to residual water content
-			theta_water = std::min(theta_water, elem.snowResidualWaterContent(elem.theta[ICE]));
-		}
-		if (watertransportmodel_snow == "RICHARDSEQUATION") {
-			// In the RICHARDSEQUATION scheme, we add up to max. 50% pore space
-			theta_water = std::min(theta_water, .5 * (1. - elem.theta[ICE]));
-		}
-	}
+	// We allow up to 50% of pore space to be filled by water
+	theta_water = std::max(0., std::min(theta_water, .5 * (1. - elem.theta[ICE])));
 	elem.theta[WATER] = theta_water;
 	elem.theta[WATER_PREF] = 0.0;
 	elem.theta[AIR]   = 1. - elem.theta[ICE] - elem.theta[WATER] - elem.theta[WATER_PREF];
