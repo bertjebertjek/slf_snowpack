@@ -428,6 +428,9 @@ void VapourTransport::LayerToLayer(const CurrentMeteo& Mdata, SnowStation& Xdata
 		if (std::fabs(EMS[e].theta[AIR]) < 1.e-15) {
 			EMS[e].theta[AIR] = 0;
 		}
+		if (std::fabs(EMS[e].theta[WATER]) < 1.e-15) {
+			EMS[e].theta[WATER] = 0;
+		}
 		EMS[e].updDensity();
 		assert(EMS[e].Rho > 0 || EMS[e].Rho == IOUtils::nodata); // density must be positive
 		if (!(EMS[e].Rho > Constants::eps
