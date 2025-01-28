@@ -404,8 +404,9 @@ void VapourTransport::LayerToLayer(const CurrentMeteo& Mdata, SnowStation& Xdata
 				EMS[e].theta[WATER] += deltaM[e] / (Constants::density_water * EMS[e].L);
 				if ((Constants::density_water / Constants::density_ice) * (EMS[e].theta[WATER] + EMS[e].theta[WATER_PREF]) > (1. - (EMS[e].theta[ICE] + EMS[e].theta[SOIL]))) {
 					// If there is not enough pore space to accomodate the liquid water part in frozen state
-					prn_msg(__FILE__, __LINE__, "wrn", Date(), "FIXME! Not enough pore space for deposition flux");
+					const double theta_w_in = EMS[e].theta[WATER];
 					EMS[e].theta[WATER] = 0.999 * ((1. - (EMS[e].theta[ICE] + EMS[e].theta[SOIL])) * (Constants::density_ice / Constants::density_water) - EMS[e].theta[WATER_PREF]);
+					prn_msg(__FILE__, __LINE__, "wrn", Date(), "FIXME! Not enough pore space for condensation flux, estimated mass balance error: %f kg/m2", EMS[e].L * (EMS[e].theta[WATER] - theta_w_in));
 				}
 				EMS[e].Qmm += (deltaM[e]*Constants::lh_vaporization)/sn_dt/EMS[e].L;	// [w/m^3]
 				Sdata.mass[SurfaceFluxes::MS_EVAPORATION] += deltaM[e];
@@ -413,8 +414,9 @@ void VapourTransport::LayerToLayer(const CurrentMeteo& Mdata, SnowStation& Xdata
 				EMS[e].theta[ICE] += deltaM[e] / (Constants::density_ice * EMS[e].L);
 				if ((Constants::density_water / Constants::density_ice) * (EMS[e].theta[WATER] + EMS[e].theta[WATER_PREF]) > (1. - (EMS[e].theta[ICE] + EMS[e].theta[SOIL]))) {
 					// If there is not enough pore space to accomodate the liquid water part in frozen state
-					prn_msg(__FILE__, __LINE__, "wrn", Date(), "FIXME! Not enough pore space for deposition flux");
+					const double theta_i_in = EMS[e].theta[ICE];
 					EMS[e].theta[ICE] = -0.999 * ((Constants::density_water / Constants::density_ice) * (EMS[e].theta[WATER] + EMS[e].theta[WATER_PREF]) + EMS[e].theta[SOIL] - 1.);
+					prn_msg(__FILE__, __LINE__, "wrn", Date(), "FIXME! Not enough pore space for deposition flux, estimated mass balance error: %f kg/m2", EMS[e].L * (EMS[e].theta[ICE] - theta_i_in));
 				}
 				EMS[e].Qmm += (deltaM[e]*Constants::lh_sublimation)/sn_dt/EMS[e].L;	// [w/m^3]
 				Sdata.mass[SurfaceFluxes::MS_SUBLIMATION] += deltaM[e];
@@ -830,7 +832,7 @@ bool VapourTransport::compDensityProfile(const CurrentMeteo& Mdata, SnowStation&
 			double error = std::abs(NDS[k].rhov-oldVaporDenNode[k]);
 			if(NDS[k].rhov<0) {
 				std::ostringstream err_msg;
-				err_msg << "[E] [" <<  Mdata.date.toString(Date::ISO) << "] Error, rhov is below zero (" << NDS[k].rhov << "). Can not proceed.";
+				err_msg << "[E] [" <<  Mdata.date.toString(Date::ISO) << "] Error at layer " << k << ": rhov is below zero (" << NDS[k].rhov << "). Cannot proceed.";
 				throw mio::IOException(err_msg.str(), AT);
 			}
 			error_max = std::max(error_max, error);
