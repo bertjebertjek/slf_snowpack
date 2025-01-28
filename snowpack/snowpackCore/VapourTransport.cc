@@ -656,7 +656,10 @@ void VapourTransport::compSurfaceSublimation(const CurrentMeteo& Mdata, double& 
 /**
  * @brief This function is the solver for discretized transient-diffusive vapor tranport equation.
  * NOTES:
- * -#   Note, for the case of only snow (no soil), bottomDirichletBCtype is set to Drichlet ans Neumann does not make sense \n
+ * -#   For the case of only snow (no soil) or sea ice, bottomDirichletBCtypeSaturation is set to true (Drichlet with \n
+ *      saturated conditions), as Neumann does not make sense. \n
+ * -#   For the case of soil, bottomDirichletBCtypeSaturation is set to false (Drichlet with unsaturated conditions), as \n
+ *      Neumann was not running stable.\n
  * -#   The system of equations forms a tridiagonal sparse matrix for which the sparse solvers from the Eigen C++ library are used. \n
  *      Here, we used quite well stabel solver as BiCGSTAB. Feel free to use other solvers by looking at Eigen documentaion.
  * -#   When selecting the Explicit method, sub time steps are computed to ensure a stable solution. \n
@@ -677,7 +680,7 @@ bool VapourTransport::compDensityProfile(const CurrentMeteo& Mdata, SnowStation&
 										 const std::vector<double>& D_el,
 										 std::vector<double>& oldVaporDenNode)
 {
-	const bool bottomDirichletBCtype = (Xdata.SoilNode == 0 && variant != "SEAICE") ? (true) : (false);
+	const bool bottomDirichletBCtypeSaturation = (Xdata.SoilNode == 0 && variant != "SEAICE") ? (true) : (false);
 
 	const size_t nN = Xdata.getNumberOfNodes();
 	size_t nE = nN-1;
@@ -730,7 +733,7 @@ bool VapourTransport::compDensityProfile(const CurrentMeteo& Mdata, SnowStation&
 		error_max = 0.;
 
 		// The lower B.C.
-		if(bottomDirichletBCtype){
+		if(bottomDirichletBCtypeSaturation){
 			double elementSaturationVaporDensity=Atmosphere::waterVaporDensity(NDS[0].T, Atmosphere::vaporSaturationPressure(NDS[0].T));
 			NDS[0].rhov=elementSaturationVaporDensity;
 		}
@@ -769,17 +772,14 @@ bool VapourTransport::compDensityProfile(const CurrentMeteo& Mdata, SnowStation&
 				v_ij = 1.0;
 				tripletList.push_back(Trip(static_cast<int>(k), static_cast<int>(k), v_ij));		// Set up the matrix diagonal
 			} if (k == 0) {
-				if (bottomDirichletBCtype) {
-					b[k] = saturationDensity;  // NDS[k].rhov;
+				if (bottomDirichletBCtypeSaturation) {
+					b[k] = saturationDensity; // Assume saturation
 					v_ij = 1.0;
 					tripletList.push_back(Trip(static_cast<int>(k), static_cast<int>(k), v_ij));	// Set up the matrix diagonal
 				} else {
-					b[k] = Constants::eps;    // Setting to 0. seems to lead to non-invertibility in some cases
-					v_ij = -1.0;
-					tripletList.push_back(Trip(static_cast<int>(k), static_cast<int>(k), v_ij));	// Set up the matrix diagonal
-
+					b[k] = NDS[k].rhov;
 					v_ij = 1.0;
-					tripletList.push_back(Trip(static_cast<int>(k), static_cast<int>(k) + 1, v_ij));// Set up the matrix upper diagonals, k+1
+					tripletList.push_back(Trip(static_cast<int>(k), static_cast<int>(k), v_ij));	// Set up the matrix diagonal
 				}
 			}
 		}
