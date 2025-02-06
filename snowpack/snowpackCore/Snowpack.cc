@@ -99,7 +99,7 @@ Snowpack::Snowpack(const SnowpackConfig& i_cfg)
             change_bc(false), meas_tss(false), vw_dendricity(false),
             enhanced_wind_slab(false), alpine3d(false), ageAlbedo(true), adjust_height_of_meteo_values(true),
             adjust_height_of_wind_value(false), advective_heat(false), heat_begin(0.), heat_end(0.),
-            temp_index_degree_day(0.), temp_index_swr_factor(0.), forestfloor_alb(false), rime_index(false), newsnow_lwc(false), read_dsm(false), soil_evaporation(), soil_thermal_conductivity()
+            temp_index_degree_day(0.), temp_index_swr_factor(0.), allow_freezing_rain(false), forestfloor_alb(false), rime_index(false), newsnow_lwc(false), read_dsm(false), soil_evaporation(), soil_thermal_conductivity()
 {
 	cfg.getValue("ALPINE3D", "SnowpackAdvanced", alpine3d);
 	cfg.getValue("VARIANT", "SnowpackAdvanced", variant);
@@ -213,6 +213,9 @@ Snowpack::Snowpack(const SnowpackConfig& i_cfg)
 	 * - thresh dtempAirSnow: 3.0 */
 	cfg.getValue("THRESH_RH", "SnowpackAdvanced", thresh_rh);
 	cfg.getValue("THRESH_DTEMP_AIR_SNOW", "SnowpackAdvanced", thresh_dtempAirSnow);
+	// Allow freezing rain: if false, mixed phase precipitation adds snow layers at melting point
+	//                      if true, mixed phase precipitation adds snow layers at air temperature or melting point, whichever is lower
+	cfg.getValue("ALLOW_FREEZING_RAIN", "SnowpackAdvanced", allow_freezing_rain);
 
 	//Calculation time step in seconds as derived from CALCULATION_STEP_LENGTH
 	const double calculation_step_length = cfg.get("CALCULATION_STEP_LENGTH", "Snowpack");
@@ -592,7 +595,11 @@ void Snowpack::updateBoundHeatFluxes(BoundCond& Bdata, SnowStation& Xdata, const
 
 	if (Mdata.psum>0. && Mdata.psum_ph>0.) { //there is some rain
 		const double gamma = ((Mdata.psum * Mdata.psum_ph) / sn_dt) * Constants::specific_heat_water;
-		Bdata.qr = gamma * (Tair - Tss);
+		if (allow_freezing_rain) {
+			Bdata.qr = gamma * (Tair - Tss);
+		} else {
+			Bdata.qr = gamma * (std::max(Tair, Xdata.Edata[Xdata.getNumberOfElements()-1].meltfreeze_tk) - Tss);
+		}
 	} else {
 		Bdata.qr = 0.;
 	}
@@ -1820,7 +1827,7 @@ void Snowpack::compSnowFall(CurrentMeteo& Mdata, SnowStation& Xdata, double& cum
 			if (Mdata.psum > 0. && Mdata.psum_ph > 0.) {
 				// There is some rain
 				total_rainwater = (Mdata.psum * Mdata.psum_ph);
-				t_surf = Constants::meltfreeze_tk;
+				if ( !allow_freezing_rain ) t_surf = Constants::meltfreeze_tk;
 			}
 
 			// Create hoar layer

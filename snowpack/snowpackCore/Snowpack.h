@@ -153,6 +153,7 @@ class Snowpack {
 		bool advective_heat;
 		double heat_begin, heat_end;
 		double temp_index_degree_day, temp_index_swr_factor;
+		bool allow_freezing_rain;
 		bool forestfloor_alb;
 		bool rime_index, newsnow_lwc, read_dsm;
 		std::string soil_evaporation, soil_thermal_conductivity;
