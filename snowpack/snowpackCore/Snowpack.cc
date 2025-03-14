@@ -231,6 +231,7 @@ Snowpack::Snowpack(const SnowpackConfig& i_cfg)
 	cfg.getValue("T_CRAZY_MIN", "SnowpackAdvanced", t_crazy_min);
 	cfg.getValue("T_CRAZY_MAX", "SnowpackAdvanced", t_crazy_max);
 	cfg.getValue("FORESTFLOOR_ALB", "SnowpackAdvanced", forestfloor_alb);
+	cfg.getValue("ENHANCED_WIND_SLAB", "SnowpackAdvanced", enhanced_wind_slab);
 
 
 	/* Initial new snow parameters, see computeSnowFall()
@@ -256,7 +257,7 @@ Snowpack::Snowpack(const SnowpackConfig& i_cfg)
 		vw_dendricity = true;
 		rh_lowlim = 1.0;
 		bond_factor_rh = 1.0;
-		enhanced_wind_slab = false; //true; //
+		// enhanced_wind_slab = false; //true; // namelist option now
 	}
 
 	cfg.getValue("NEW_SNOW_GRAIN_SIZE", "SnowpackAdvanced", new_snow_grain_size);
