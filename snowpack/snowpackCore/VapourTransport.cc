@@ -33,15 +33,16 @@
 #include <errno.h>
 
 //Eigen, note we temporarily disable Effective C++ warnings
-#ifdef __GNUC__
-    #pragma GCC diagnostic push
-    #pragma GCC diagnostic ignored "-Weffc++"
-	#pragma GCC diagnostic ignored "-Wctor-dtor-privacy"
-#elif defined __clang__
+#ifdef __clang__
 	#pragma clang diagnostic push
 	#pragma clang diagnostic ignored "-Wdeprecated"
 	#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
 	#pragma clang diagnostic ignored "-Wsign-conversion"
+#elif defined __GNUC__
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Weffc++"
+	#pragma GCC diagnostic ignored "-Wctor-dtor-privacy"
+	#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
 #endif
 #include <meteoio/thirdParty/Eigen/Dense>
 #include <meteoio/thirdParty/Eigen/Sparse>
@@ -51,10 +52,10 @@
 #include <meteoio/thirdParty/Eigen/SparseLU>
 #include <meteoio/thirdParty/Eigen/Core>
 typedef Eigen::Triplet<double> Trip;
-#ifdef __GNUC__
-    #pragma GCC diagnostic pop
-#elif defined __clang__
-	#pragma clang diagnostic pop
+#ifdef __clang__
+    #pragma clang diagnostic pop
+#elif defined __GNUC__
+	#pragma GCC diagnostic pop
 #endif
 
 using namespace mio;

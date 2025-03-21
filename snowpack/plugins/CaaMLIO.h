@@ -26,10 +26,19 @@ along with MeteoIO.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <string>
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Weffc++"
-#include <snowpack/plugins/pugixml/pugixml.hpp>
-#pragma GCC diagnostic pop
+//PugiXML, we temporarily disable warnings
+#ifdef __GNUC__
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Weffc++"
+	#pragma GCC diagnostic ignored "-Wctor-dtor-privacy"
+	#include <snowpack/plugins/pugixml/pugixml.hpp>
+	#pragma GCC diagnostic pop
+#elif defined __clang__
+	#pragma clang diagnostic push
+	#pragma clang diagnostic ignored "-Wdeprecated-dynamic-exception-spec"
+	#include <snowpack/plugins/pugixml/pugixml.hpp>
+	#pragma clang diagnostic pop
+#endif
 
 
 /**
