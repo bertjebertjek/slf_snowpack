@@ -33,9 +33,16 @@
 #include <errno.h>
 
 //Eigen, note we temporarily disable Effective C++ warnings
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Weffc++"
-#pragma GCC diagnostic ignored "-Wctor-dtor-privacy"
+#ifdef __GNUC__
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Weffc++"
+	#pragma GCC diagnostic ignored "-Wctor-dtor-privacy"
+#elif defined __clang__
+	#pragma clang diagnostic push
+	#pragma clang diagnostic ignored "-Wdeprecated"
+	#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
+	#pragma clang diagnostic ignored "-Wsign-conversion"
+#endif
 #include <meteoio/thirdParty/Eigen/Dense>
 #include <meteoio/thirdParty/Eigen/Sparse>
 #include <meteoio/thirdParty/Eigen/IterativeLinearSolvers>
@@ -43,9 +50,12 @@
 #include <meteoio/thirdParty/Eigen/SparseCholesky>
 #include <meteoio/thirdParty/Eigen/SparseLU>
 #include <meteoio/thirdParty/Eigen/Core>
-
 typedef Eigen::Triplet<double> Trip;
-#pragma GCC diagnostic pop
+#ifdef __GNUC__
+    #pragma GCC diagnostic pop
+#elif defined __clang__
+	#pragma clang diagnostic pop
+#endif
 
 using namespace mio;
 using namespace std;
