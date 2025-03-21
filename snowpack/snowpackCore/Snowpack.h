@@ -62,6 +62,8 @@ class Snowpack {
 
 		void setSnDt(const double& snDt) { sn_dt = snDt;}
 
+		void RedepositSnow(CurrentMeteo Mdata, SnowStation& Xdata, SurfaceFluxes& Sdata, double redeposit_mass);
+
 		/**
 		 * @brief Specifies what kind of boundary condition is to be implemented at the top surface.
 		 * Either use surface fluxes (NEUMANN_BC) or use a prescribed surface temperature (DIRICHLET_BC)

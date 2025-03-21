@@ -244,3 +244,6 @@ void SnowDrift::compSnowDrift(const CurrentMeteo& Mdata, SnowStation& Xdata, Sur
 		Xdata.ErosionMass = 0.;
 	}
 }
+
+
+

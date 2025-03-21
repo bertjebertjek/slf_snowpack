@@ -105,6 +105,9 @@ bool restart = false;
 static mio::Date dateBegin, dateEnd;
 static vector<string> vecStationIDs;
 
+///Enables deposit notification for debugging
+bool msg_deposit = true;
+
 /// @brief Main control parameters
 struct MainControl
 {
@@ -528,7 +531,7 @@ inline void dataForCurrentTimeStep(CurrentMeteo& Mdata, SurfaceFluxes& surfFluxe
                             SunObject &sun,
                             double& precip, const double& lw_in, const double hs_a3hl6,
                             double& tot_mass_in,
-                            const std::string& variant, const bool& iswr_is_net, Meteo &meteo)
+                            const std::string& variant, const bool& iswr_is_net, Meteo &meteo) //, Snowpack &snowpack)
 {
 	SnowStation &currentSector = vecXdata[slope.sector]; //alias: the current station
 	const bool isMainStation = (slope.sector == slope.mainStation);
@@ -631,13 +634,24 @@ inline void dataForCurrentTimeStep(CurrentMeteo& Mdata, SurfaceFluxes& surfFluxe
 		*/
 		if (slope.snow_redistribution && (slope.sector == slope.lee)) {
 			// If it is not snowing, use surface snow density on windward slope
-			if (!(hn_slope > 0.)) {
-				rho_hn_slope = vecXdata[slope.luv].rho_hn;
+			// if (!(hn_slope > 0.)) {
+			// 	rho_hn_slope = vecXdata[slope.luv].rho_hn;
+			// }
+			// // Add eroded mass from windward slope
+			// if (rho_hn_slope != 0.) {
+			// 	hn_slope += vecXdata[slope.luv].ErosionMass / rho_hn_slope;
+			// }
+
+			// Add eroded mass from windward slope using the Redeposit scheme:
+				
+			if ( msg_deposit) { //messages for debug
+				if (vecXdata[slope.luv].ErosionMass > 0.) {
+					prn_msg(__FILE__, __LINE__, "msg+", Mdata.date, "Depositing total mass %.3lf kg/m2 ( slope=%d)", vecXdata[slope.luv].ErosionMass, slope.sector ); //Xdata.meta.getAzimuth(), Xdata.meta.getSlopeAngle());
+				}
 			}
-			// Add eroded mass from windward slope
-			if (rho_hn_slope != 0.) {
-				hn_slope += vecXdata[slope.luv].ErosionMass / rho_hn_slope;
-			}
+			Snowpack snowpack(cfg); // HACK: this is a temporary snowpack object
+			snowpack.RedepositSnow(Mdata, vecXdata[slope.sector], surfFluxes, vecXdata[slope.luv].ErosionMass);
+
 			vecXdata[slope.luv].ErosionMass = 0.;
 		}
 		// Update depth of snowfall on slopes.
@@ -1224,9 +1238,10 @@ inline void real_main (int argc, char *argv[])
 				Mdata.copySnowTemperatures(vecMyMeteo[i_stn], slope_sequence);
 				Mdata.copySolutes(vecMyMeteo[i_stn], SnowStation::number_of_solutes);
 				slope.setSlope(slope_sequence, vecXdata, Mdata.dw_drift);
+				
 				dataForCurrentTimeStep(Mdata, surfFluxes, vecXdata, slope, tmpcfg,
                                        sun, cumsum.precip, lw_in, hs_a3hl6,
-                                       tot_mass_in, variant, iswr_is_net, meteo);
+                                       tot_mass_in, variant, iswr_is_net, meteo); //, snowpack);
 
 				// Store ea from main slope to be used on the virtual slopes (in case it was modified in copyMeteoData or dataForCurrentTimeStep)
 				if (slope.sector == slope.mainStation) vecMyMeteo[i_stn]("EA") = Mdata.ea;
@@ -1242,7 +1257,7 @@ inline void real_main (int argc, char *argv[])
 				}
 
 				// SNOWPACK model (Temperature and Settlement computations)
-				Snowpack snowpack(tmpcfg); //the snowpack model to use
+				Snowpack snowpack(tmpcfg); //the snowpack model to use 
 				Stability stability(tmpcfg, classify_profile);
 				snowpack.runSnowpackModel(Mdata, vecXdata[slope.sector], cumsum.precip, sn_Bdata, surfFluxes);
 
