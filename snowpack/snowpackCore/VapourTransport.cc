@@ -35,6 +35,10 @@
 //Eigen, note we temporarily disable Effective C++ warnings
 #ifdef __clang__
 	#pragma clang diagnostic push
+	#pragma clang diagnostic ignored "-Walloca"
+	#pragma clang diagnostic ignored "-Wused-but-marked-unused"
+	#pragma clang diagnostic ignored "-Wunused-but-set-variable"
+	#pragma clang diagnostic ignored "-Wextra-semi"
 	#pragma clang diagnostic ignored "-Wdeprecated"
 	#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
 	#pragma clang diagnostic ignored "-Wsign-conversion"
