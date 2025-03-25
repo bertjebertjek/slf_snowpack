@@ -66,7 +66,7 @@ const double SeaIce::InitSnowSalinity = 0.;
  ************************************************************/
 
 SeaIce::SeaIce():
-	SeaLevel(0.), ForcedSeaLevel(IOUtils::nodata), FreeBoard (0.), IceSurface(0.), IceSurfaceNode(0), OceanHeatFlux(0.), BottomSalFlux(0.), TopSalFlux(0.), check_initial_conditions(false), salinityprofile(SINUSSAL), thermalmodel(ASSUR1958) {}
+	SeaLevel(0.), ForcedSeaLevel(IOUtils::nodata), FreeBoard (0.), IceSurface(0.), IceSurfaceNode(0), OceanHeatFlux(0.), BottomSalFlux(0.), TopSalFlux(0.), check_initial_conditions(false), salinityprofile(SINUSSAL), thermalmodel(ASSUR1958), buoyancymodel(STANDARD), buoyancy_value(0.) {}
 
 SeaIce& SeaIce::operator=(const SeaIce& source) {
 	if(this != &source) {
@@ -121,8 +121,27 @@ void SeaIce::ConfigSeaIce(const SnowpackConfig& i_cfg) {
 		}
 	}
 
+	// Read buoyancy model for sea ice to use
+	std::string tmp_buoyancymodel;
+	i_cfg.getValue("BUOYANCYMODEL", "SnowpackSeaice", tmp_buoyancymodel, mio::IOUtils::nothrow);
+	if(!tmp_buoyancymodel.empty()) {
+		if (tmp_buoyancymodel=="STANDARD") {
+			buoyancymodel=STANDARD;
+			buoyancy_value = 0.;
+		} else if (tmp_buoyancymodel=="CONSTANTOFFSET") {
+			buoyancymodel=CONSTANTOFFSET;
+			i_cfg.getValue("BUOYANCYMODEL_ARG", "SnowpackSeaice", buoyancy_value);
+		} else if (tmp_buoyancymodel=="ADVANCED") {
+			buoyancymodel=ADVANCED;
+		} else {
+			prn_msg( __FILE__, __LINE__, "err", Date(), "Unknown buoyancy model (key: BUOYANCYMODEL).");
+			throw;
+		}
+	}
+
 	// Read whether or not to check the initial conditions
 	i_cfg.getValue("CHECK_INITIAL_CONDITIONS", "SnowpackSeaice", check_initial_conditions, mio::IOUtils::nothrow);
+
 	return;
 }
 
@@ -270,6 +289,27 @@ void SeaIce::updateFreeboard(SnowStation& Xdata)
 {
 	Xdata.compSnowpackMasses();
 	SeaLevel = (ForcedSeaLevel!=IOUtils::nodata) ? (ForcedSeaLevel) : (Xdata.swe / (Constants::density_water + SeaIce::betaS * SeaIce::OceanSalinity));
+
+	// Methods to take into account the spatial variability on the buoyancy. We perturb SeaLevel to achieve this.
+	if (buoyancymodel==CONSTANTOFFSET) {
+		SeaLevel += buoyancy_value;
+	} else if (buoyancymodel==ADVANCED) {
+		const double dry_buoyancy = (Xdata.swe - Xdata.lwc_sum) / (Constants::density_water + SeaIce::betaS * SeaIce::OceanSalinity);
+		const double mode_Hs = findIceSurface(Xdata);
+		const double x = dry_buoyancy - mode_Hs;
+		double correction = 0.;
+		if(x<-0.592) {
+			correction = 0.;
+		} else if (x<-0.050) {
+			correction = 0.093*x*x + 0.110*x + 0.033;
+		} else {
+			correction = -0.595*x + -0.002;
+		}
+		correction = std::min(0.333 * mode_Hs, correction);
+		SeaLevel += correction;
+	}
+
+	// Calculate freeboard
 	const double FreeBoard_snow = Xdata.cH - SeaLevel;	// This is the freeboard relative to snow surface
 	FreeBoard = (findIceSurface(Xdata) - (Xdata.cH - FreeBoard_snow));
 	return;

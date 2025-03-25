@@ -80,7 +80,9 @@ class SeaIce {
 		salinityprofiles salinityprofile;
 		enum thermalmodels{IGNORE, ASSUR1958, VANCOPPENOLLE2019, VANCOPPENOLLE2019_M};
 		thermalmodels thermalmodel;
-
+		enum buoyancymodels{STANDARD, CONSTANTOFFSET, ADVANCED};
+		buoyancymodels buoyancymodel;
+		double buoyancy_value;
 
 		friend std::iostream& operator<<(std::iostream& os, const SeaIce& data);
 		friend std::iostream& operator>>(std::iostream& is, SeaIce& data);
