@@ -104,6 +104,8 @@ class SeaIce {
 
 		void runSeaIceModule(SnowStation& Xdata, const CurrentMeteo& Mdata, BoundCond& Bdata, const double& sn_dt, SurfaceFluxes& Sdata);
 
+	private:
+		size_t ThetaIceStepDetection(SnowStation& Xdata);
 }; //end class Snowpack
 
 #endif

@@ -316,6 +316,59 @@ void SeaIce::updateFreeboard(SnowStation& Xdata)
 }
 
 /**
+ * @brief Step detection in theta[ICE], to determine snow/ice transition\n
+ *   It uses a simple step-detection approach, for cases where it is known that only one step exists.
+ *   We use it on theta[ICE], to detect the location of the change from ice to snow
+ * @version 25.03
+ * @param Xdata SnowStation object to use in calculation
+ * @return Index of the node that represents the snow/ice transition
+ */
+size_t SeaIce::ThetaIceStepDetection(SnowStation& Xdata)
+{
+	const size_t nE = Xdata.getNumberOfElements();
+
+	std::vector<double> arr(nE, 0.);
+
+	double sum = 0.;
+	double theta_ice;
+	for (size_t e = 0; e < nE; e++) {
+		// We sharpen the contrast between ice and snow:
+		if(Xdata.Edata[e].theta[ICE] > 700./Constants::density_ice) {
+			theta_ice = 1.;
+		} else if (Xdata.Edata[e].theta[ICE] < 400./Constants::density_ice) {
+			theta_ice = 100./917.;
+		} else {
+			theta_ice = Xdata.Edata[e].theta[ICE];
+		}
+		sum+=theta_ice;
+		arr[e]=theta_ice;
+	}
+
+	// Mean centering
+	const double avg = sum / static_cast<double>(nE);
+	for (auto& val : arr) {
+		val -= avg;
+	}
+
+	// The left and right sum of the mean-centered series is 0
+	double l_sum = 0.;
+	double r_sum = 0.;
+
+	// Now find step
+	double max = 0.;	// max value
+	size_t max_i = 0;   // index of max value
+	for (size_t e = 0; e < nE; e++) {
+		l_sum += arr[e];
+		r_sum -= arr[e];
+		if (l_sum - r_sum > max) {
+			max = l_sum - r_sum;
+			max_i = e;
+		}
+	}
+	return max_i+1;	// We return the uppernode of the element
+}
+
+/**
  * @brief Find snow/ice transition for sea ice simulations\n
  * @version 16.08
  * @param Xdata SnowStation object to use in calculation
@@ -323,6 +376,8 @@ void SeaIce::updateFreeboard(SnowStation& Xdata)
 double SeaIce::findIceSurface(SnowStation& Xdata)
 {
 	const size_t nE = Xdata.getNumberOfElements();
+	const bool useStepDetection = true; // If true, use the Step Detection algorithm. If false, use the original method to find the first layer from the top that has ice density.
+	                                    // FIXME: the original method can be removed, once the Step Detection algorithm is found to work well
 
 	// Now find ice/snow transition
 	if(nE == 0) {
@@ -330,23 +385,30 @@ double SeaIce::findIceSurface(SnowStation& Xdata)
 		IceSurfaceNode = 0;
 		return IceSurface;
 	}
-	// Deal with the case that the top element is ice
-	if (Xdata.Edata[nE-1].theta[ICE] * Constants::density_ice > ice_threshold) {
-		IceSurface = Xdata.Ndata[nE].z;
-		IceSurfaceNode = nE;
+
+	if(useStepDetection) {
+		IceSurfaceNode = ThetaIceStepDetection(Xdata);
+		IceSurface = Xdata.Ndata[IceSurfaceNode].z;
 		return IceSurface;
-	}
-	// Go from top to bottom. Note that ice layers inside the snowpack may fool this simple search.
-	for (size_t e = nE-1; e-- > 0;) {
-		if (Xdata.Edata[e].theta[ICE] * Constants::density_ice > ice_threshold && Xdata.Edata[e+1].theta[ICE] * Constants::density_ice < ice_threshold) {
-			IceSurface = Xdata.Ndata[e+1].z;
-			IceSurfaceNode = e+1;
+	} else {
+		// Deal with the case that the top element is ice
+		if (Xdata.Edata[nE-1].theta[ICE] * Constants::density_ice > ice_threshold) {
+			IceSurface = Xdata.Ndata[nE].z;
+			IceSurfaceNode = nE;
 			return IceSurface;
 		}
+		// Go from top to bottom. Note that ice layers inside the snowpack may fool this simple search.
+		for (size_t e = nE-1; e-- > 0;) {
+			if (Xdata.Edata[e].theta[ICE] * Constants::density_ice > ice_threshold && Xdata.Edata[e+1].theta[ICE] * Constants::density_ice < ice_threshold) {
+				IceSurface = Xdata.Ndata[e+1].z;
+				IceSurfaceNode = e+1;
+				return IceSurface;
+			}
+		}
+		IceSurfaceNode = 0;
+		IceSurface = 0.;
+		return IceSurface;
 	}
-	IceSurfaceNode = 0;
-	IceSurface = 0.;
-	return IceSurface;
 }
 
 /**
