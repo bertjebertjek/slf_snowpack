@@ -16,6 +16,7 @@ ENDIF()
 
 SET(LIBPREFIX "lib") #make sure ALL plugins are libXXX for ALL plateforms
 SET(CMAKE_IMPORT_LIBRARY_PREFIX "lib") #for Visual C++ import libraries
+SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 ###########################################################
 #platform specific. First, compiler specific flags, then system specific flags
