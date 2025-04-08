@@ -23,6 +23,8 @@
 #include <snowpack/snowpackCore/Metamorphism.h>
 #include <snowpack/StabilityAlgorithms.h>
 
+#include <iomanip>
+
 using namespace std;
 using namespace mio;
 
