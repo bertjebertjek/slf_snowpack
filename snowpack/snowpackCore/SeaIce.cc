@@ -295,7 +295,15 @@ void SeaIce::updateFreeboard(SnowStation& Xdata)
 		SeaLevel += buoyancy_value;
 	} else if (buoyancymodel==ADVANCED) {
 		const double dry_buoyancy = (Xdata.swe - Xdata.lwc_sum) / (Constants::density_water + SeaIce::betaS * SeaIce::OceanSalinity);
-		const double mode_Hs = findIceSurface(Xdata);
+		// Find ice thickness. The first line would be ideal to use, but it leads to oscillations. Some ice forming higher up in the domain, can directly impact the ice thickness.
+		//const double mode_Hs = findIceSurface(Xdata);
+		// Sum all layers with dry density above the ice_threshold. This approach is more stable, as ice forming higher up in the domain only has a small impact on the total ice thickness.
+		double mode_Hs = 0.;
+		for (size_t e = 0; e < Xdata.getNumberOfElements(); e++) {
+			if (Xdata.Edata[e].theta[ICE] * Constants::density_ice > ice_threshold) {
+				mode_Hs += Xdata.Edata[e].L;
+			}
+		}
 		const double x = dry_buoyancy - mode_Hs;
 		double correction = 0.;
 		if(x<-0.592) {
