@@ -1326,8 +1326,14 @@ bool Snowpack::compTemperatureProfile(const CurrentMeteo& Mdata, SnowStation& Xd
 	if (coupled_phase_changes) {
 		// Ensure that when top element consists of ice, its upper node does not exceed melting temperature
 		// This is to have consistent surface energy balance calculation and for having good looking output
-		// Note: for sea ice, the effect of salinity is such that this doesn't work...
-		if (nE > 0 && Xdata.Edata[nE-1].theta[ICE] > Constants::eps && Xdata.Edata[nE-1].salinity > Constants::eps2) NDS[nE].T=std::min(Xdata.Edata[nE-1].meltfreeze_tk, NDS[nE].T);
+		if (variant == "SEAICE") {
+			// For sea ice, check if the phase change in the surface element is significant, such that tiny amounts of brine salinity doesn't cause problems. Note that (1.E-5) comes from the convergence criterion
+			if (nE > 0 && Xdata.Edata[nE-1].theta[ICE] > Constants::eps && Xdata.Edata[nE-1].Qmf / ((Constants::density_ice * Constants::lh_fusion) / sn_dt) > (1.E-5)) NDS[nE].T=std::min(Xdata.Edata[nE-1].meltfreeze_tk, NDS[nE].T);
+			// Just make sure we never exceed the fresh-water melting point for sea ice surface temperatures
+			NDS[nE].T=std::min(Constants::meltfreeze_tk, NDS[nE].T);
+		} else {
+			if (nE > 0 && Xdata.Edata[nE-1].theta[ICE] > Constants::eps) NDS[nE].T=std::min(Xdata.Edata[nE-1].meltfreeze_tk, NDS[nE].T);
+		}
 	}
 
 	return TempEqConverged;
