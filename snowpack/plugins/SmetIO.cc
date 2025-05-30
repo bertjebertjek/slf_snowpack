@@ -23,6 +23,8 @@
 #include <snowpack/snowpackCore/Metamorphism.h>
 #include <snowpack/StabilityAlgorithms.h>
 
+#include <iomanip>
+
 using namespace std;
 using namespace mio;
 
@@ -33,8 +35,8 @@ using namespace mio;
  * <a href="https://meteoio.slf.ch">MeteoIO</a> pre-processing library documentation (under
  * <i>"Available plugins and usage"</i>, then <i>"smet"</i>).
  *
-* @note There is also a python library, <a href="https://gitlabext.wsl.ch/patrick.leibersperger/pysmet">pySMET</a> available, to read SMET files.
- * 
+* @note There is also a python library, <a href="https://code.wsl.ch/patrick.leibersperger/snowpat">snowpat</a> available, to read SMET files.
+ *
  * @section fluxes_ts Fluxes timeseries
  * These files are very regular SMET files with a large number of fields.
  *
@@ -105,7 +107,6 @@ using namespace mio;
  * CanopyHeight     = 0.00				;height (in m) of the canopy
  * CanopyLeafAreaIndex     = 0.00
  * CanopyDirectThroughfall = 1.00
- * WindScalingFactor       = 1.00			;some stations consistently measure a wind that is too low
  * ErosionLevel     = 0
  * TimeCountDeltaHS = 0.000000
  * fields           = timestamp Layer_Thick  T  Vol_Frac_I  Vol_Frac_W  Vol_Frac_V  Vol_Frac_S Rho_S Conduc_S HeatCapac_S  rg  rb  dd  sp  mk mass_hoar ne CDot metamo
@@ -148,7 +149,7 @@ SmetIO::SmetIO(const SnowpackConfig& cfg, const RunInfo& run_info)
         : fixedPositions(), outpath(), o_snowpath(), experiment(), inpath(), i_snowpath(),
           metamorphism_model(), variant(), sw_mode(), info(run_info), tsWriters(), acdd(false),
           in_dflt_TZ(0.), calculation_step_length(0.), ts_days_between(0.), min_depth_subsurf(0.),
-          avgsum_time_series(false), useCanopyModel(false), useSoilLayers(false), research_mode(false), perp_to_slope(false), haz_write(true), useReferenceLayer(false),
+          avgsum_time_series(false), useCanopyModel(false), useSoilLayers(false), research_mode(false), perp_to_slope(false), precip_rates(true), haz_write(true), useReferenceLayer(false),
           out_heat(false), out_lw(false), out_sw(false), out_meteo(false), out_haz(false), out_mass(false), out_t(false),
           out_load(false), out_stab(false), out_canopy(false), out_soileb(false), out_inflate(false), useRichardsEq(false), enable_pref_flow(false), enable_ice_reservoir(false), read_dsm(false)
 {
@@ -158,6 +159,7 @@ SmetIO::SmetIO(const SnowpackConfig& cfg, const RunInfo& run_info)
 	cfg.getValue("SW_MODE", "Snowpack", sw_mode);
 	cfg.getValue("MIN_DEPTH_SUBSURF", "SnowpackAdvanced", min_depth_subsurf);
 	cfg.getValue("PERP_TO_SLOPE", "SnowpackAdvanced", perp_to_slope);
+	cfg.getValue("PRECIP_RATES", "Output", precip_rates);
 	cfg.getValue("AVGSUM_TIME_SERIES", "Output", avgsum_time_series, IOUtils::nothrow);
 	cfg.getValue("RESEARCH", "SnowpackAdvanced", research_mode);
 	cfg.getValue("METAMORPHISM_MODEL", "SnowpackAdvanced", metamorphism_model, IOUtils::nothrow);
@@ -547,7 +549,6 @@ mio::Date SmetIO::read_snosmet_header(const smet::SMETReader& sno_reader, const 
 	SSdata.Canopy_Height = get_doubleval(sno_reader, "CanopyHeight");
 	SSdata.Canopy_LAI = get_doubleval(sno_reader, "CanopyLeafAreaIndex");
 	SSdata.Canopy_Direct_Throughfall = get_doubleval(sno_reader, "CanopyDirectThroughfall");
-	SSdata.WindScalingFactor = get_doubleval(sno_reader, "WindScalingFactor");
 
 	SSdata.ErosionLevel = get_intval(sno_reader, "ErosionLevel");
 	SSdata.TimeCountDeltaHS = get_doubleval(sno_reader, "TimeCountDeltaHS");
@@ -823,7 +824,7 @@ void SmetIO::setSnoSmetHeader(const SnowStation& Xdata, const Date& date, smet::
 	smet_writer.set_header_value("BareSoil_z0", ss.str());
 
 	// Canopy Characteristics
-	ss.str(""); ss << fixed << setprecision(2) << Xdata.Cdata.height;
+	ss.str(""); ss << fixed << setprecision(3) << Xdata.Cdata.height;
 	smet_writer.set_header_value("CanopyHeight", ss.str());
 	ss.str(""); ss << fixed << setprecision(6) << Xdata.Cdata.lai;
 	smet_writer.set_header_value("CanopyLeafAreaIndex", ss.str());
@@ -847,8 +848,6 @@ void SmetIO::setSnoSmetHeader(const SnowStation& Xdata, const Date& date, smet::
 	smet_writer.set_header_value("SoilEmissivity", ss.str());
 
 	// Additional parameters
-	ss.str(""); ss << fixed << setprecision(2) << Xdata.WindScalingFactor;
-	smet_writer.set_header_value("WindScalingFactor", ss.str());
 	smet_writer.set_header_value("ErosionLevel", static_cast<double>(Xdata.ErosionLevel));
 	ss.str(""); ss << fixed << setprecision(6) << Xdata.TimeCountDeltaHS;
 	smet_writer.set_header_value("TimeCountDeltaHS", ss.str());
@@ -951,11 +950,11 @@ std::string SmetIO::getFieldsHeader(const SnowStation& Xdata) const
 	if (out_lw)
 		os << "OLWR ILWR LWR_net" << " "; //Longwave radiation fluxes (W m-2)
 	if (out_sw)
-		os << "OSWR ISWR Qw pAlbedo mAlbedo ISWR_h ISWR_dir ISWR_diff" << " "; //Shortwave radiation fluxes (W m-2) and computed albedo
+		os << "RSWR ISWR Qw pAlbedo mAlbedo ISWR_h ISWR_dir ISWR_diff" << " "; //Shortwave radiation fluxes (W m-2) and computed albedo
 	if (out_meteo)
 		os << "TA TSS_mod TSS_meas T_bottom RH VW VW_drift DW MS_Snow HS_mod HS_meas" << " "; //Air temperature, snow surface temperature (modeled and measured), temperature at bottom of snow/soil pack (degC)
 	if (out_haz)
-		os << "hoar_size wind_trans24 HN3 HN6 HN12 HN24 HN72_24 PSUM24 ski_pen" << " ";//surface hoar size (mm), 24h drift index (cm), 3 hours height of new snow HN (cm), 6 hours HN, 12 hours HN, 24 hours HN, 3d sum of daily new snow depths (cm), 24 h new snow water equivalent (kg m-2), skier penetration depth (m)
+		os << "hoar_size wind_trans24 HN3 HN6 HN12 HN24 HN72_24 HNW24 ski_pen" << " ";//surface hoar size (mm), 24h drift index (cm), 3 hours height of new snow HN (cm), 6 hours HN, 12 hours HN, 24 hours HN, 3d sum of daily new snow depths (cm), 24 h new snow water equivalent (kg m-2), skier penetration depth (m)
 	if (out_soileb)
 		os << "dIntEnergySoil meltFreezeEnergySoil ColdContentSoil" << " ";
 	if (out_mass) {
@@ -1028,7 +1027,7 @@ void SmetIO::writeTimeSeriesHeader(const SnowStation& Xdata, const double& tz, s
 		plot_max << "" << " ";
 	}
 	if (out_sw) {
-		//"OSWR ISWR Qw pAlbedo mAlbedo ISWR_h ISWR_dir ISWR_diff"
+		//"RSWR ISWR Qw pAlbedo mAlbedo ISWR_h ISWR_dir ISWR_diff"
 		plot_description << "reflected_short_wave_radiation  incoming_short_wave_radiation  net_short_wave_radiation  parametrized_albedo  measured_albedo  incoming_short_wave_on_horizontal  direct_incoming_short_wave  diffuse_incoming_short_wave" << " ";
 		plot_units << "W/m2 W/m2 W/m2 - - W/m2 W/m2 W/m2" << " ";
 		units_offset << "0 0 0 0 0 0 0 0" << " ";
@@ -1040,7 +1039,13 @@ void SmetIO::writeTimeSeriesHeader(const SnowStation& Xdata, const double& tz, s
 	if (out_meteo) {
 		//"TA TSS_mod TSS_meas T_bottom RH VW VW_drift DW MS_Snow HS_mod HS_meas"
 		plot_description << "air_temperature  surface_temperature(mod)  surface_temperature(meas)  bottom_temperature  relative_humidity  wind_velocity  wind_velocity_drift  wind_direction  solid_precipitation_rate  snow_height(mod)  snow_height(meas)" << " ";
-		plot_units << "K K K K - m/s m/s ° kg/m2/h m m" << " ";
+		plot_units << "K K K K - m/s m/s ° ";
+		if (precip_rates) {
+			plot_units << " kg/m2/h";
+		} else {
+			plot_units << " kg/m2";
+		}
+		plot_units << " m m" << " ";
 		units_offset << "273.15 273.15 273.15 273.15 0 0 0 0 0 0 0" << " ";
 		units_multiplier << "1 1 1 1 0.01 1 1 1 1 0.01 0.01" << " ";
 		plot_color << "0x8324A4 0xFAA6D0 0xFA72B7 0xDE22E2 0x50CBDB 0x297E24 0x297E24 0x64DD78 0x2431A4 0x818181 0x000000" << " ";
@@ -1048,7 +1053,7 @@ void SmetIO::writeTimeSeriesHeader(const SnowStation& Xdata, const double& tz, s
 		plot_max << "" << " ";
 	}
 	if (out_haz) {
-		//"hoar_size wind_trans24 HN3 HN6 HN12 HN24 HN72_24 PSUM24(WC24)"
+		//"hoar_size wind_trans24 HN3 HN6 HN12 HN24 HN72_24 HNW24(WC24) ski_pen"
 		plot_description << "hoar_size  24h_wind_drift 3h_height_of_new_snow 6h_height_of_new_snow 12h_height_of_new_snow 24h_height_of_new_snow 3d_sum_of_daily_height_of_new_snow 24h_percipitation skier_penetration_depth" << " ";
 		plot_units << "m m m m m m m m m" << " ";
 		units_offset << "0 0 0 0 0 0 0 0 0" << " ";
@@ -1070,7 +1075,13 @@ void SmetIO::writeTimeSeriesHeader(const SnowStation& Xdata, const double& tz, s
 	if (out_mass) {
 		//"SWE MS_Water MS_Water_Soil MS_Ice_Soil MS_Wind MS_Rain MS_SN_Runoff MS_Surface_mass_flux MS_Soil_Runoff MS_Sublimation MS_Evap"
 		plot_description << "snow_water_equivalent  total_amount_of_water  total_amount_of_water_soil  total_amount_of_ice_soil  erosion_mass_loss  rain_rate  virtual_lysimeter_surface_snow_only surface_mass_flux  virtual_lysimeter_under_the_soil  sublimation_mass  evaporated_mass" << " ";
-		plot_units << "kg/m2 kg/m2 kg/m2 kg/m2 kg/m2/h kg/m2/h kg/m2 kg/m2 kg/m2 kg/m2 kg/m2" << " ";
+		plot_units << "kg/m2 kg/m2 kg/m2 kg/m2 kg/m2/h";
+		if (precip_rates) {
+			plot_units << " kg/m2/h";
+		} else {
+			plot_units << " kg/m2";
+		}
+		plot_units << " kg/m2 kg/m2 kg/m2 kg/m2 kg/m2" << " ";
 		units_offset << "0 0 0 0 0 0 0 0 0 0 0" << " ";
 		units_multiplier << "1 1 1 1 1 1 1 1 1 1 1" << " ";
 		plot_color << "0x3300FF 0x3300FF 0x3300FF 0x3300FF 0x0000FF 0x99CCCC 0x009E9E 0x0066CC 0x003366 0xCCFFFF 0xCCCCFF" << " ";
@@ -1244,10 +1255,10 @@ void SmetIO::writeTimeSeriesData(const SnowStation& Xdata, const SurfaceFluxes& 
 		data.push_back( (perp_to_slope? Hdata.hn12/cos_sl : Hdata.hn12) ); vec_precision.push_back(dflt_precision); vec_width.push_back(dflt_width);
 		data.push_back( (perp_to_slope? Hdata.hn24/cos_sl : Hdata.hn24) ); vec_precision.push_back(dflt_precision); vec_width.push_back(dflt_width);
 		data.push_back( (perp_to_slope? Hdata.hn72_24/cos_sl : Hdata.hn72_24) ); vec_precision.push_back(dflt_precision); vec_width.push_back(dflt_width);
-		data.push_back( (perp_to_slope? Hdata.psum24/cos_sl : Hdata.psum24) ); vec_precision.push_back(dflt_precision); vec_width.push_back(dflt_width);
+		data.push_back( (perp_to_slope? Hdata.hnw24/cos_sl : Hdata.hnw24) ); vec_precision.push_back(dflt_precision); vec_width.push_back(dflt_width);
 		const double penetrationDepth = StabilityAlgorithms::compPenetrationDepth(Xdata);
 		data.push_back( penetrationDepth ); vec_precision.push_back(dflt_precision); vec_width.push_back(dflt_width);
-		
+
 	}
 
 	if (out_soileb) {

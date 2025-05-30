@@ -27,6 +27,8 @@
 #include <snowpack/snowpackCore/Metamorphism.h>
 #include <snowpack/snowpackCore/Aggregate.h>
 
+#include <iomanip>
+
 #define MAX_STRING_LENGTH 256
 
 using namespace std;
@@ -115,7 +117,6 @@ const bool AsciiIO::t_gnd = false;
  * CanopyHeight=0.
  * CanopyLeafAreaIndex=0.
  * CanopyDirectThroughfall=0
- * WindScalingFactor=1.00
  * ErosionLevel=0
  * TimeCountDeltaHS=0.00
  * YYYY MM DD HH MI Layer_Thick  T  Vol_Frac_I  Vol_Frac_W  Vol_Frac_V  Vol_Frac_S Rho_S Conduc_S HeatCapac_S  rg  rb  dd  sp  mk mass_hoar ne CDot metamo
@@ -197,6 +198,7 @@ const bool AsciiIO::t_gnd = false;
  * 0604,nElems,structural stability index SSI
  * 0605,nElems,inverse texture index ITI (Mg m-4)
  * 0606,nElems,critical cut length (m)
+ * 0607,nElems,relative threshold sum approach RTA
  * 0621,nElems,dsm (for NIED only)
  * 0622,nElems,Sigdsm (for NIED only)
  * 0623,nElems,S_dsm (for NIED only)
@@ -609,10 +611,6 @@ void AsciiIO::readSnowCover(const std::string& i_snowfile, const std::string& st
 		throw InvalidFormatException("Can not read CanopyDirectThroughfall in file "+snofilename, AT);
 	}
 
-	if (fscanf(fin, "\nWindScalingFactor=%lf",&SSdata.WindScalingFactor) != 1) {
-		fclose(fin);
-		throw InvalidFormatException("Can not read WindScalingFactor in file "+snofilename, AT);
-	}
 	if (fscanf(fin, "\nErosionLevel=%d",&SSdata.ErosionLevel) != 1) {
 		fclose(fin);
 		throw InvalidFormatException("Can not read ErosionLevel in file "+snofilename, AT);
@@ -830,7 +828,6 @@ void AsciiIO::writeSnowCover(const mio::Date& date, const SnowStation& Xdata,
 	fout << "CanopyLeafAreaIndex= " << setprecision(6) << Xdata.Cdata.lai << "\n";
 	fout << "CanopyDirectThroughfall= " << setprecision(2) << Xdata.Cdata.direct_throughfall << "\n";
 	// Additional parameters
-	fout << "WindScalingFactor= " << Xdata.WindScalingFactor << "\n";
 	fout << "ErosionLevel= " << Xdata.ErosionLevel << "\n";
 	fout << "TimeCountDeltaHS= " << Xdata.TimeCountDeltaHS << "\n";
 
@@ -1283,6 +1280,10 @@ void AsciiIO::writeProfileProAddDefault(const SnowStation& Xdata, std::ofstream 
 		for (size_t e = Xdata.SoilNode; e < nE; e++) {
 			fout << "," << std::fixed << std::setprecision(2) << EMS[e].crit_cut_length;
 		}
+		// 0607: relative threshold sum approach (RTA)
+		fout << "\n0607," << nE-Xdata.SoilNode;
+		for (size_t e = Xdata.SoilNode; e < nE; e++)
+			fout << "," << std::fixed << std::setprecision(2) << NDS[e+1].rta;
 		if (metamorphism_model == "NIED") {
 			// 0621: Dry snow metamorphism factor
 			fout << "\n0621," << nE-Xdata.SoilNode;
@@ -1301,7 +1302,7 @@ void AsciiIO::writeProfileProAddDefault(const SnowStation& Xdata, std::ofstream 
 			}
 		}
 	} else {
-		for (size_t jj = 1; jj < 7; jj++) {
+		for (size_t jj = 1; jj < 8; jj++) {
 			fout << "\n060" << jj << ",1,0";
 		}
 		if (metamorphism_model == "NIED") {
@@ -1358,6 +1359,10 @@ void AsciiIO::writeProfileProAddCalibration(const SnowStation& Xdata, std::ofstr
 		for (size_t e = Xdata.SoilNode; e < nE; e++) {
 			fout << "," << std::fixed << std::setprecision(2) << EMS[e].crit_cut_length;
 		}
+		// 0607: relative threshold sum approach RTA
+		fout << "\n0607," << nE-Xdata.SoilNode;
+		for (size_t e = Xdata.SoilNode; e < nE; e++)
+			fout << "," << std::fixed << std::setprecision(2) << NDS[e+1].rta;
 
 		// 700-profile specials for settling comparison
 		// 0701: SNOWPACK: settling rate due to metamorphism (sig0) (% h-1)
@@ -1409,7 +1414,7 @@ void AsciiIO::writeProfileProAddCalibration(const SnowStation& Xdata, std::ofstr
 			fout << "," << std::fixed << std::setprecision(2) << 1.e-9*eta_sntherm;
 		}
 	} else {
-		for (size_t jj = 1; jj < 7; jj++) {
+		for (size_t jj = 1; jj < 8; jj++) {
 			fout << "\n060" << jj << ",1,0";
 		}
 		for (size_t jj = 1; jj < 7; jj++) {
@@ -2482,6 +2487,7 @@ void AsciiIO::writeProHeader(const SnowStation& Xdata, std::ofstream &fout) cons
 	fout << "\n0604,nElems,ssi";
 	fout << "\n0605,nElems,inverse texture index ITI (Mg m-4)";
 	fout << "\n0606,nElems,critical cut length (m)";
+	fout << "\n0607,nElems,rta";
 	if (metamorphism_model == "NIED") {
 		fout << "\n0621,nElems,dry snow metamorphism factor (dsm)";
 		fout << "\n0622,nElems,Sigdsm";

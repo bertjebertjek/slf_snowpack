@@ -571,7 +571,7 @@ inline bool readSlopeMeta(mio::IOManager& io, SnowpackIO& snowpackio,
                           Slope& slope, mio::Date &current_date,
                           vector<SN_SNOWSOIL_DATA> &vecSSdata,
                           vector<SnowStation> &vecXdata, ZwischenData &sn_Zdata,
-                          CurrentMeteo& Mdata, double &wind_scaling_factor,
+                          CurrentMeteo& Mdata, double &/*wind_scaling_factor*/,
                           double &time_count_deltaHS) {
 	string snowfile;
 	stringstream ss;
@@ -644,7 +644,6 @@ inline bool readSlopeMeta(mio::IOManager& io, SnowpackIO& snowpackio,
 
 		// Operational mode ONLY: Pass ... wind_factor, snow depth discrepancy time counter
 		if ((sector == slope.mainStation) && (mode == "OPERATIONAL")) {
-			wind_scaling_factor = vecSSdata[slope.mainStation].WindScalingFactor;
 			time_count_deltaHS = vecSSdata[slope.mainStation].TimeCountDeltaHS;
 		}
 	}

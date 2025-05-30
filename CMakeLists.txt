@@ -1,5 +1,5 @@
 #SPDX-License-Identifier: LGPL-3.0-or-later
-CMAKE_MINIMUM_REQUIRED(VERSION 3.1...3.27.2)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.1...3.31.6)
 LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/tools/cmake/")
 
 PROJECT(snowpack)
@@ -16,6 +16,7 @@ ENDIF()
 
 SET(LIBPREFIX "lib") #make sure ALL plugins are libXXX for ALL plateforms
 SET(CMAKE_IMPORT_LIBRARY_PREFIX "lib") #for Visual C++ import libraries
+SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 ###########################################################
 #platform specific. First, compiler specific flags, then system specific flags
@@ -154,18 +155,20 @@ INSTALL(FILES ${pugifiles} DESTINATION include/snowpack/plugins/pugixml COMPONEN
 INSTALL(FILES ${hcorefiles} DESTINATION include/snowpack/snowpackCore COMPONENT headers)
 
 ADD_CUSTOM_TARGET(distclean make clean
-	COMMAND cmake -E remove snowpack/*~ snowpack/cmake_install.cmake
-	COMMAND cmake -E remove applications/snowpack/*~ applications/snowpack/cmake_install.cmake applications/snowpack/Makefile  applications/snowpack/cmake_*.cmake
-	COMMAND cmake -E remove tests/*~ tests/res1exp/*~ tests/res5exp/*~ tests/cmake_install.cmake tests/CTestTestfile.cmake
-	COMMAND cmake -E remove_directory CMakeFiles
-	COMMAND cmake -E remove_directory snowpack/CMakeFiles
-	COMMAND cmake -E remove_directory applications/snowpack/CMakeFiles
-	COMMAND cmake -E remove_directory tests/CMakeFiles
-	COMMAND cmake -E remove tests/res1exp/*.cmake tests/res1exp/output/*
-	COMMAND cmake -E remove_directory tests/res1exp/CMakeFiles
-	COMMAND cmake -E remove_directory tests/res1exp/Testing
-	COMMAND cmake -E remove *~ CMakeCache.txt cmake_install.cmake CPack*.cmake cmake_*.cmake Makefile
-	)
+	COMMAND cmake -E remove CMakeCache.txt CTestTestfile.cmake DartConfiguration.tcl CPack*.cmake cmake_*.cmake install_manifest.txt Makefile CMakeDoxy*
+	COMMAND cmake -E remove "lib/libsnow*.${DLL_EXT}" "lib/libsnow*.${STAT_EXT}" "lib/libsnow*.lib"
+	COMMAND cmake -E remove */CMakeCache.txt */CTestTestfile.cmake */cmake_install.cmake
+	COMMAND cmake -E remove *~ snowpack/*~ snowpack/*/*~ applications/snowpack/*~
+	COMMAND cmake -E remove applications/snowpack/cmake_install.cmake applications/snowpack/Makefile  applications/snowpack/cmake_*.cmake
+	COMMAND cmake -E remove */*/CMakeCache.txt */*/CTestTestfile.cmake */*/cmake_install.cmake
+	COMMAND cmake -E remove_directory CMakeFiles snowpack/CMakeFiles snowpack/*/CMakeFiles applications/snowpack/CMakeFiles
+	COMMAND cmake -E remove compile_commands.json
+	COMMAND cmake -E remove_directory Testing
+	COMMAND cmake -E remove_directory tests/CMakeFiles tests/*/CMakeFiles
+	COMMAND cmake -E remove tests/Makefile tests/*/Makefile tests/CTestTestfile.cmake tests/*/CTestTestfile.cmake tests/cmake_install.cmake tests/*/cmake_install.cmake
+	COMMAND cmake -E remove tests/*~ tests/*/*~
+	COMMAND cmake -E remove tests/res1exp/output/* tests/res5exp/output/*
+)
 
 ###########################################################
 #for the uninstall target
@@ -178,7 +181,11 @@ ADD_CUSTOM_TARGET(uninstall "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/c
 
 #Build the documentation if doxygen is found
 INCLUDE(FindDoxygen)
-FIND_PACKAGE(Doxygen)
+IF(CMAKE_VERSION VERSION_GREATER 3.9)
+	FIND_PACKAGE(Doxygen OPTIONAL_COMPONENTS dot)
+ELSE(CMAKE_VERSION VERSION_GREATER 3.9)
+	FIND_PACKAGE(Doxygen)
+ENDIF(CMAKE_VERSION VERSION_GREATER 3.9)
 IF(DOXYGEN_FOUND)
 	ADD_CUSTOM_TARGET(doc COMMAND ${CMAKE_COMMAND} -E env SN_VERSION="${_versionString}" "doxygen" ${PROJECT_SOURCE_DIR}/snowpack/config.dox)
 ENDIF(DOXYGEN_FOUND)

@@ -233,7 +233,7 @@ class SN_SNOWSOIL_DATA {
                      nLayers(0), Ldata(), HS_last(0.), Albedo(mio::IOUtils::nodata),
 								     SoilAlb(mio::IOUtils::nodata), BareSoil_z0(mio::IOUtils::nodata),
                      Canopy_Height(mio::IOUtils::nodata), Canopy_LAI(mio::IOUtils::nodata),
-										 Canopy_Direct_Throughfall(mio::IOUtils::nodata),  WindScalingFactor(1.),
+										 Canopy_Direct_Throughfall(mio::IOUtils::nodata),
 										 ErosionLevel(static_cast<int>(mio::IOUtils::nodata)), TimeCountDeltaHS(mio::IOUtils::nodata),
 										 Canopy_BasalArea(mio::IOUtils::nodata), Canopy_diameter(mio::IOUtils::nodata),
 										 Canopy_lai_frac_top_default(mio::IOUtils::nodata),Canopy_int_cap_snow(mio::IOUtils::nodata),
@@ -259,7 +259,6 @@ class SN_SNOWSOIL_DATA {
 		double Canopy_Height;             ///< Canopy Height in m
 		double Canopy_LAI;                ///< Canopy Leaf Area Index in m2 m-2
 		double Canopy_Direct_Throughfall; ///< Direct throughfall [fraction of precipitation]
-		double WindScalingFactor;         ///< Local scaling factor for wind at drift station
 		int    ErosionLevel;              ///< Erosion Level in operational mode (flat field virtual erosion)
 		double TimeCountDeltaHS;          ///< Time counter tracking erroneous settlement in operational mode
 		/// OPTIONAL PARAMETERS, a warning will be thrown in CANOPY::Initialize if no value is provided
@@ -392,7 +391,7 @@ class ElementData {
 /// @brief NODAL DATA used as a pointer in the SnowStation structure
 class NodeData {
 	public:
-		NodeData() : z(0.), u(0.), f(0.), udot(0.), T(0.), S_n(0.), S_s(0.), ssi(6.), hoar(0.),
+		NodeData() : z(0.), u(0.), f(0.), udot(0.), T(0.), S_n(0.), S_s(0.), ssi(6.), rta(0.), hoar(0.),
 		             dsm(0.), S_dsm(0.), Sigdsm(0.), rime(0.), water_flux(0.), rhov(0.) {} //HACK: set ssi to max_stability!
 
 		const std::string toString() const;
@@ -407,6 +406,7 @@ class NodeData {
 		double S_n;  ///< Stability Index for natural avalanches
 		double S_s;  ///< Stability Index for skier triggered avalanches
 		double ssi;  ///< Structural Stability Index
+		double rta;  ///< Relative Threshold Sum apprach
 		double hoar; ///< Mass of surface hoar collected while node was exposed to surface
 
 		//NIED (H. Hirashima)
@@ -691,7 +691,6 @@ class SnowStation {
 		double meltFreezeEnergySoil;///< Melt freeze part of internal energy change of soil (J m-2)
 		double ReSolver_dt;         ///< Last used RE time step in the previous SNOWPACK time step
 		bool windward;              ///< True for windward (luv) slope
-		double WindScalingFactor;   ///< Local scaling factor for wind at drift station
 		double TimeCountDeltaHS;    ///< Time counter tracking erroneous settlement in operational mode
 		static const double comb_thresh_l_ratio, comb_thresh_ice, comb_thresh_water;
 		static const double comb_thresh_dd, comb_thresh_sp, comb_thresh_rg;
