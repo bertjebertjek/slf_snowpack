@@ -31,13 +31,13 @@
 #include <snowpack/Utils.h>
 #include <snowpack/Laws_sn.h>
 #include <snowpack/snowpackCore/WaterTransport.h>
+#include <snowpack/snowpackCore/SeaIce.h>
 #include <snowpack/snowpackCore/VapourTransport.h>
 #include <snowpack/TechnicalSnow.h>
 #include <snowpack/snowpackCore/Metamorphism.h>
 #include <snowpack/snowpackCore/PhaseChange.h>
 
 #include <assert.h>
-#include <sstream>
 #include <errno.h>
 
 using namespace mio;

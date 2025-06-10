@@ -22,6 +22,7 @@
 #include <snowpack/snowpackCore/Snowpack.h>
 #include <snowpack/snowpackCore/ReSolver1d.h>
 #include <snowpack/snowpackCore/PhaseChange.h>
+#include <snowpack/snowpackCore/SeaIce.h>
 #include <snowpack/Constants.h>
 #include <snowpack/Utils.h>
 

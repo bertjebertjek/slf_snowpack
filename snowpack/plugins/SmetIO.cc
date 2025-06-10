@@ -22,6 +22,7 @@
 #include <snowpack/Utils.h>
 #include <snowpack/snowpackCore/Metamorphism.h>
 #include <snowpack/StabilityAlgorithms.h>
+#include <snowpack/snowpackCore/SeaIce.h>
 
 #include <iomanip>
 

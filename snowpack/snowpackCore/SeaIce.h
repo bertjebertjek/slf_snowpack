@@ -29,8 +29,7 @@
 #include <snowpack/DataClasses.h>
 
 #include <meteoio/MeteoIO.h>
-#include <vector>
-#include <string>
+
 
 // Forward-declare classes
 class ElementData;

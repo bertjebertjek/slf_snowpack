@@ -28,7 +28,7 @@
 
 #include <snowpack/SnowpackConfig.h>
 #include <snowpack/vanGenuchten.h>
-#include <snowpack/snowpackCore/SeaIce.h>
+class SeaIce;	//forward declaration to prevent include loop
 
 #include <snowpack/Constants.h>
 #include <meteoio/MeteoIO.h>

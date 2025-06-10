@@ -30,6 +30,7 @@
 #include <snowpack/snowpackCore/Solver.h>
 #include <snowpack/Laws_sn.h>
 #include <snowpack/snowpackCore/Aggregate.h>
+#include <snowpack/snowpackCore/SeaIce.h>
 
 #include <cstdio>
 #include <iomanip>

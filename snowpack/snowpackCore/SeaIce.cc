@@ -32,8 +32,8 @@
 #include <snowpack/snowpackCore/ReSolver1d.h>
 
 #include <assert.h>
-#include <sstream>
-#include <errno.h>
+#include <vector>
+#include <string>
 
 using namespace mio;
 using namespace std;
