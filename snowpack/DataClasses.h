@@ -857,8 +857,11 @@ class RunInfo {
 		const std::string compilation_date; ///< Date of compilation
 		const std::string user; ///< logname of the user running the simulation
 		const std::string hostname; ///< hostname of the computer running the simulation
+		const std::string history;	 ///< History string, like in ACDD, combining several of the information below
 
 	private:
+		std::string setHistory();
+		static int hexToDecimal(const std::string& hex);
 		static double getNumericVersion(std::string version_str);
 		static mio::Date getRunDate();
 		static std::string getCompilationDate();

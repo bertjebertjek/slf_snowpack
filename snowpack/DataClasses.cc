@@ -59,19 +59,62 @@ const double SnowStation::comb_thresh_rg = 0.125;   ///< Grain radius (mm)
 
 RunInfo::RunInfo()
             : version(SN_VERSION), version_num( getNumericVersion(SN_VERSION) ), computation_date(getRunDate()),
-              compilation_date(getCompilationDate()), user(IOUtils::getLogName()), hostname(IOUtils::getHostName()) {}
+              compilation_date(getCompilationDate()), user(IOUtils::getLogName()), hostname(IOUtils::getHostName()), history(setHistory()) {}
 
 RunInfo::RunInfo(const RunInfo& orig)
             : version(orig.version), version_num(orig.version_num), computation_date(orig.computation_date),
-              compilation_date(orig.compilation_date), user(orig.user), hostname(orig.hostname) {}
+              compilation_date(orig.compilation_date), user(orig.user), hostname(orig.hostname), history(orig.history) {}
 
+std::string RunInfo::setHistory()
+{
+	std::string history_str( "Run "+computation_date.toString(mio::Date::ISO_Z) );
+	if (!user.empty()) {
+		history_str.append( ", by "+user );
+		if (!hostname.empty()) history_str.append( "@"+hostname );
+	} else {
+		if (!hostname.empty()) history_str.append( ", @"+hostname );
+	}
+	history_str.append( ", with Snowpack-" + version + ", compiled on " + compilation_date );
+
+	return history_str;
+}
+
+int RunInfo::hexToDecimal(const std::string& hex)
+{	
+	int decimalValue = 0;
+	int base = 1;
+
+	for (auto it = hex.rbegin(); it != hex.rend(); ++it) {
+		if (*it >= '0' && *it <= '9') {
+			decimalValue += (*it - '0') * base;
+		} else if (*it >= 'A' && *it <= 'F') {
+			decimalValue += (*it - 'A' + 10) * base;
+		} else {
+			return 0;
+		}
+		base *= 16; // Increase base by power of 16
+	}
+
+	return decimalValue;	//returns 0 if hex.empty()
+}
+              
 double RunInfo::getNumericVersion(std::string version_str)
 {
 	//remove any '-' used for formatting the date
 	version_str.erase(std::remove_if(version_str.begin(), version_str.end(), [] (char c) { return c=='-'; }), version_str.end());
-	//keep only the first '.' and remove the other ones, if any
-	const std::string::difference_type pos = static_cast<std::string::difference_type>( version_str.find('.') );	//very ugly, but size_t is not the same as difference_type...
-	version_str.erase(std::remove_if(version_str.begin()+pos+1, version_str.end(), [] (char c) { return c=='.'; }), version_str.end());
+	const size_t pos = version_str.find('.');
+	if (pos==std::string::npos) return .0;
+	
+	//extract the date part
+	const std::string date_str( version_str.substr(0, pos) );
+	//extract the git hash
+	const int git_hash = hexToDecimal( version_str.substr(pos+1) ); //returns 0 if parsing failed
+	
+	if (git_hash>0) 
+		version_str = date_str + '.' + std::to_string(git_hash);
+	else
+		version_str = date_str;
+	
 	return atof( version_str.c_str() );
 }
 
