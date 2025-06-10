@@ -207,11 +207,7 @@ SmetIO::SmetIO(const SnowpackConfig& cfg, const RunInfo& run_info)
 	if (write_acdd) {
 		acdd.setEnabled(true);
 		acdd.setUserConfig(cfg, "Output", false); //do not allow multi-line keys
-		if (out_haz) { // HACK To avoid troubles in A3D
-			mio::Date now;
-			now.setFromSys();
-			acdd.addAttribute("history", now.toString(mio::Date::ISO_Z) + ", " + info.user + "@" + info.hostname + ", Snowpack-" + info.version);
-		}
+		//acdd.deleteAttribute( "history" );	//this is handled in this plugin instead (see methods below)
 	}
 }
 
@@ -642,7 +638,7 @@ void SmetIO::writeSnowCover(const mio::Date& date, const SnowStation& Xdata,
 	}
 
 	writeSnoFile(snofilename, date, Xdata, Zdata, enable_pref_flow, enable_ice_reservoir);
-	if (haz_write) writeHazFile(hazfilename, date, Xdata, Zdata);
+	if (haz_write) writeHazFile(hazfilename, date, Xdata, Zdata, info.history);
 }
 
 /*
@@ -651,10 +647,10 @@ void SmetIO::writeSnowCover(const mio::Date& date, const SnowStation& Xdata,
 * The SMETWriter object finally writes out the HAZ SMET file
 */
 void SmetIO::writeHazFile(const std::string& hazfilename, const mio::Date& date, const SnowStation& Xdata,
-                          const ZwischenData& Zdata)
+                          const ZwischenData& Zdata, const std::string& i_history)
 {
 	smet::SMETWriter haz_writer(hazfilename);
-	setBasicHeader(Xdata, "timestamp SurfaceHoarIndex DriftIndex ThreeHourNewSnow TwentyFourHourNewSnow", haz_writer);
+	setBasicHeader(Xdata, "timestamp SurfaceHoarIndex DriftIndex ThreeHourNewSnow TwentyFourHourNewSnow", haz_writer, i_history);
 	haz_writer.set_header_value("ProfileDate", date.toString(Date::ISO));
 
 	haz_writer.set_width( vector<int>(4,10) );
@@ -717,7 +713,7 @@ void SmetIO::writeSnoFile(const std::string& snofilename, const mio::Date& date,
 		ss << " cIce cWater cAir  cSoil";
 	}
 
-	setBasicHeader(Xdata, ss.str(), sno_writer);
+	setBasicHeader(Xdata, ss.str(), sno_writer, info.history);
 	setSnoSmetHeader(Xdata, date, sno_writer);
 
 	vector<string> vec_timestamp;
@@ -773,7 +769,7 @@ void SmetIO::writeSnoFile(const std::string& snofilename, const mio::Date& date,
 	sno_writer.write(vec_timestamp, vec_data, mio::ACDD(false));
 }
 
-void SmetIO::setBasicHeader(const SnowStation& Xdata, const std::string& fields, smet::SMETWriter& smet_writer)
+void SmetIO::setBasicHeader(const SnowStation& Xdata, const std::string& fields, smet::SMETWriter& smet_writer, const std::string& history)
 {
 	// Set the basic, mandatory header key/value pairs for a SMET file
 	smet_writer.set_header_value("station_id", Xdata.meta.getStationID());
@@ -788,6 +784,9 @@ void SmetIO::setBasicHeader(const SnowStation& Xdata, const std::string& fields,
 	smet_writer.set_header_value("epsg", Xdata.meta.position.getEPSG());
 	smet_writer.set_header_value("slope_angle", Xdata.meta.getSlopeAngle());
 	smet_writer.set_header_value("slope_azi", Xdata.meta.getAzimuth());
+
+	//Add version information
+	if (!history.empty()) smet_writer.set_header_value("history", history);
 }
 
 void SmetIO::setSnoSmetHeader(const SnowStation& Xdata, const Date& date, smet::SMETWriter& smet_writer)
@@ -997,7 +996,7 @@ std::string SmetIO::getFieldsHeader(const SnowStation& Xdata) const
 void SmetIO::writeTimeSeriesHeader(const SnowStation& Xdata, const double& tz, smet::SMETWriter& smet_writer) const
 {
 	const std::string fields( getFieldsHeader(Xdata) );
-	setBasicHeader(Xdata, fields, smet_writer);
+	setBasicHeader(Xdata, fields, smet_writer, info.history);
 	smet_writer.set_header_value("tz", tz);
 
 	std::ostringstream units_offset, units_multiplier;
