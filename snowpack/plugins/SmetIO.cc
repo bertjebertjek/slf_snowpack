@@ -207,7 +207,7 @@ SmetIO::SmetIO(const SnowpackConfig& cfg, const RunInfo& run_info)
 	if (write_acdd) {
 		acdd.setEnabled(true);
 		acdd.setUserConfig(cfg, "Output", false); //do not allow multi-line keys
-		//acdd.deleteAttribute( "history" );	//this is handled in this plugin instead (see methods below)
+		acdd.deleteAttribute( "history" );	//this is handled in this plugin instead (see methods below)
 	}
 }
 
