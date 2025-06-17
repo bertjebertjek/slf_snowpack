@@ -63,6 +63,13 @@ class Snowpack {
 		void setSnDt(const double& snDt) { sn_dt = snDt;}
 
 		/**
+		 * @brief Redeposit snow that was eroded. This is used either with EROSION_REDEPOSIT or SNOW_REDISTRIBUTION. The density with which the snow is redeposited
+		 * is determined by the density_redist parameter, which can be set to "EVENT" (default) or "PARAMETERIZED" (same hn_density scheme as used for new snow) or 
+		 * a different setting from the hn_density options. 
+		 */
+		void RedepositSnow(CurrentMeteo Mdata, SnowStation& Xdata, SurfaceFluxes& Sdata, double redeposit_mass, const std::string density_redist="EVENT");
+
+		/**
 		 * @brief Specifies what kind of boundary condition is to be implemented at the top surface.
 		 * Either use surface fluxes (NEUMANN_BC) or use a prescribed surface temperature (DIRICHLET_BC)
 		 */
@@ -142,9 +149,11 @@ class Snowpack {
 		bool combine_elements, reduce_n_elements, change_bc, meas_tss;
 		bool vw_dendricity;
 		bool enhanced_wind_slab; ///< to use an even stronger wind slab densification than implemented by default
+		std::string snow_erosion; // erosion of snow: NONE, HS_DRIVEN, FREE, VIRTUAL or REDEPOSIT
+		bool snow_redistribution; // redistribution of snow from windward (luv) slope to leeward slope
 		bool alpine3d; ///< triggers various tricks for Alpine3D (including reducing the number of warnings)
 		bool ageAlbedo; ///< use the age of snow in the albedo parametrizations? default: true
-
+		bool force_add_snowfall; // to force snowfall in case of small amounts. Used in redepositSnow
 		const static double min_allowed_sn_dt; ///< minimum allowed snowpack time step for solving the heat equation
 		const static bool hydrometeor;
 		const static double snowfall_warning;

@@ -86,6 +86,17 @@ void checkOldOutputFiles(const mio::Date& i_date, const std::string& stationID);
 
 double getPerpSensorPosition(const bool& useSoilLayers, const double& z_vert, const double& hs_ref, const double& Ground, const double& SlopeAngle);
 
+
+class Warning {
+public:
+    Warning(const std::string& msg, const std::string& file, int line) {
+        std::cerr << "[WARNING] " << msg
+                  << " [at " << file << ":" << line << "]" << std::endl;
+    }
+};
+
+#define WARN(msg) Warning((msg), __FILE__, __LINE__)
+
 /**
  * @name MACRO definitions (to be replaced by proper functions some day)
  * TODO Move this definitions to Util.h, as functions to Util.c

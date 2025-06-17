@@ -43,6 +43,35 @@ const bool SnowDrift::msg_erosion = false;
  * non-static section                                       *
  ************************************************************/
 
+/**
+ * @brief Returns the erosion type as defined in the configuration file
+ * @param cfg SnowpackConfig object
+ * @return erosion type as string
+ * @throws UnknownValueException if the value is not valid
+ * @todo /TODO this should really be moved to Utils.cc or some init module. 
+ * But because snowpackConfig / Snowpack are initialized every time step (yikes) that is currently not feasible. 
+ * Specifially, the (re-)initialization of SnowDrift in runSnowpackModel() makes this very messy.
+ */
+static std::string get_erosion(const SnowpackConfig& cfg)
+{
+	std::string erosion = "NONE";
+	cfg.getValue("SNOW_EROSION", "SnowpackAdvanced", erosion);
+	std::transform(erosion.begin(), erosion.end(), erosion.begin(), ::toupper);	// Force upper case
+	if (erosion != "NONE" && erosion != "VIRTUAL" && erosion != "HS_DRIVEN" && erosion != "FREE" && erosion != "REDEPOSIT") {
+		if (erosion == "TRUE") { // SNOW_EROSION==TRUE is deprecated and now interpreted as HS_DRIVEN.
+			erosion="HS_DRIVEN";
+		} else if (erosion == "FALSE") { // SNOW_EROSION==FALSE is deprecated and now interpreted as NONE.
+			erosion="NONE";
+		} else {
+			std::stringstream msg;
+			msg << "Value provided for SNOW_EROSION (" << erosion << ") is not valid. Choose either NONE, VIRTUAL, HS_DRIVEN, FREE or REDEPOSIT.";
+			throw UnknownValueException(msg.str(), AT);
+		}
+	}
+	return erosion;
+}
+
+
 static bool get_bool(const SnowpackConfig& cfg, const std::string& key, const std::string& section)
 {
 	bool value;

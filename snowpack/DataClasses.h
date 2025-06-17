@@ -666,6 +666,8 @@ class SnowStation {
 		double hn;                  ///< Depth of new snow to be used on slopes
 		double rho_hn;              ///< Density of new snow to be used on slopes
 		double rime_hn;              ///< rime of new snow to be used on slopes
+		double hn_redeposit;        ///< Depth of redeposited snow (REDEPOSIT mode)
+		double rho_hn_redeposit;    ///< Density of redeposited snow (REDEPOSIT mode)
 		size_t ErosionLevel;        ///< Element where snow erosion stopped previously for the drift index
 		double ErosionMass;         ///< Eroded mass either real or virtually (storage if less than one element)
 		char S_class1;               ///< Stability class based on hand hardness, grain class ...
@@ -691,6 +693,7 @@ class SnowStation {
 		double meltFreezeEnergySoil;///< Melt freeze part of internal energy change of soil (J m-2)
 		double ReSolver_dt;         ///< Last used RE time step in the previous SNOWPACK time step
 		bool windward;              ///< True for windward (luv) slope
+		bool leeward;              	///< True for leeward (lee) slope, so we know which slope to deposit snow on (and not erode there).
 		double TimeCountDeltaHS;    ///< Time counter tracking erroneous settlement in operational mode
 		static const double comb_thresh_l_ratio, comb_thresh_ice, comb_thresh_water;
 		static const double comb_thresh_dd, comb_thresh_sp, comb_thresh_rg;

@@ -97,7 +97,7 @@ Snowpack::Snowpack(const SnowpackConfig& i_cfg)
             allow_adaptive_timestepping(false), research_mode(false), useCanopyModel(false), enforce_measured_snow_heights(false), detect_grass(false),
             soil_flux(false), useSoilLayers(false), coupled_phase_changes(false), combine_elements(false), reduce_n_elements(false),
             change_bc(false), meas_tss(false), vw_dendricity(false),
-            enhanced_wind_slab(false), alpine3d(false), ageAlbedo(true), adjust_height_of_meteo_values(true),
+            enhanced_wind_slab(false), snow_erosion("NONE"), snow_redistribution(false), alpine3d(false), ageAlbedo(true), adjust_height_of_meteo_values(true),
             adjust_height_of_wind_value(false), advective_heat(false), heat_begin(0.), heat_end(0.),
             temp_index_degree_day(0.), temp_index_swr_factor(0.), forestfloor_alb(false), rime_index(false), newsnow_lwc(false), read_dsm(false), soil_evaporation(), soil_thermal_conductivity()
 {
@@ -259,6 +259,10 @@ Snowpack::Snowpack(const SnowpackConfig& i_cfg)
 		enhanced_wind_slab = false; //true; //
 	}
 
+	cfg.getValue("SNOW_EROSION", "SnowpackAdvanced", snow_erosion);
+	std::transform(snow_erosion.begin(), snow_erosion.end(), snow_erosion.begin(), ::toupper);	// Force upper case
+	// check for legacy values of snow_erosion???
+	cfg.getValue("SNOW_REDISTRIBUTION", "SnowpackAdvanced", snow_redistribution); 	
 	cfg.getValue("NEW_SNOW_GRAIN_SIZE", "SnowpackAdvanced", new_snow_grain_size);
 	new_snow_bond_size = 0.25 * new_snow_grain_size;
 
@@ -1933,6 +1937,84 @@ void Snowpack::compSnowFall(const CurrentMeteo& Mdata, SnowStation& Xdata, doubl
 }
 
 /**
+ * @brief Add snow layers that originate from wind-transported snow being deposited, using the event-driven deposition scheme.
+ * @param Mdata Meteorological data (pass by value, since we modify it)
+ * @param Xdata Snow cover data
+ * @param redeposit_mass cumulated amount of snow deposition (kg m-2)
+ * @param density_redist allow for different density setting for the redeposited snow:
+ * 	 - "EVENT" (default): use the EVENT scheme from Groot-Zwaaftink (this is the default if nothing is set - see Snowpack.h),
+ * 	 - "PARAMETERIZED": to use the same hn_density_parameterization as regular snowfall (set in ini file or default LEHNING_NEW), 
+ *   -  a member of the hn_density_parameterization: to use a specific scheme other than the one used for 'normal' snowfall. 
+ */
+void Snowpack::RedepositSnow(CurrentMeteo Mdata, SnowStation& Xdata, SurfaceFluxes& Sdata, double redeposit_mass, const std::string density_redist)
+{
+	// Backup settings we are going to override:
+	const bool tmp_force_add_snowfall = force_add_snowfall;
+	const std::string tmp_hn_density = hn_density;
+	const std::string tmp_hn_density_param = hn_density_parameterization;
+	const std::string tmp_variant = variant;
+	const bool tmp_enforce_measured_snow_heights = enforce_measured_snow_heights;
+	const double tmp_Xdata_hn = Xdata.hn;
+	const double tmp_Xdata_rho_hn = Xdata.rho_hn;
+	const mio::Date tmp_MdataDate = Mdata.date;
+	
+	// Deposition mode settings:
+	double tmp_psum = redeposit_mass;
+	force_add_snowfall = true;
+	
+	// set the density of the redeposited snow:
+	if (density_redist == "EVENT" ) {
+		hn_density = "EVENT";
+		// The EVENT scheme uses vw_avg and rh_avg in the calculations. In the REDEPOSIT scheme, we force the use of instantaneous values for wind speed and relative humidity:
+		Mdata.vw_avg = Mdata.vw;
+		Mdata.rh_avg = Mdata.rh;
+	}else if (density_redist == "PARAMETERIZED"){ //use same density as hn_density_parameterization
+		hn_density = "PARAMETERIZED";	
+	} else { // use a specific scheme from the hn_density_parameterizations in Laws_sn.cc
+		hn_density = "PARAMETERIZED";
+		hn_density_parameterization = density_redist;
+	}
+	
+	if (variant=="ANTARCTICA") variant = "POLAR";		// Ensure that the ANTARCTICA wind speed limits are *not* used.
+	enforce_measured_snow_heights = false;
+	Mdata.psum = redeposit_mass; Mdata.psum_ph = 0.; // PSUM driven deposition, so psum>0. No rain so psum_ph=0.
+	Xdata.hn = 0.; // note that for normal snowfall, vslopes receive snowfall from Xdata.hn, but here we set it to 0  for all slopes.
+	
+	/** Below needs ErosionAge added to SnowStation class */
+	// if (Xdata.ErosionAge != Constants::undefined && redeposit_keep_age) {
+	// 	mio::Date EnforcedDepositionDate(Xdata.ErosionAge, Mdata.date.getTimeZone());
+	// 	Mdata.date = EnforcedDepositionDate;
+	// }
+
+	// if this redeposit scheme is used for snow_distribution (in Main.cc), luv eroded snow can be deposited on the bare lee ground before runSnowpackMOdel is called, and t_surf is not yet set.
+	// In this case, we need to set t_surf so the temperature profile can be properly computed after deposition.
+	if (t_surf == Constants::undefined || t_surf == 0.0) {
+		t_surf = std::min(Constants::meltfreeze_tk , Xdata.Ndata[Xdata.getNumberOfNodes()-1].T);
+	}
+
+	// Add eroded snow:
+	compSnowFall(Mdata, Xdata, tmp_psum, Sdata);  //tmp_psum = redeposit_mass. But note that vslopes (normally) receive snowfall from Xdata.hn.
+	
+	// Save the redeposited snow and its density in Xdata:
+	Xdata.hn_redeposit = Xdata.hn;
+	Xdata.rho_hn_redeposit = Xdata.rho_hn;
+
+	// Set back original settings:
+	force_add_snowfall = tmp_force_add_snowfall;
+	hn_density = tmp_hn_density;
+	hn_density_parameterization = tmp_hn_density_param;
+	variant = tmp_variant;
+	enforce_measured_snow_heights = tmp_enforce_measured_snow_heights;
+	Mdata.date = tmp_MdataDate;
+	Xdata.hn = tmp_Xdata_hn; // reset to original value
+	Xdata.rho_hn = tmp_Xdata_rho_hn; // reset to original value
+}	
+
+
+
+
+
+/**
  * @brief The near future (s. below) has arrived on Wednesday Feb. 6, when it was finally snowing
  * in Davos and Sergey, Michael and Perry were working furiously on SNOWPACK again. Michael
  * prepared the coupling of the model to the energy balance model of Olivia and his own snow
@@ -2026,6 +2108,17 @@ void Snowpack::runSnowpackModel(CurrentMeteo& Mdata, SnowStation& Xdata, double&
 		if (!alpine3d) { //HACK: we need to set to 0 the external drift
 			double tmp=0.;
 			snowdrift.compSnowDrift(Mdata, Xdata, Sdata, tmp);
+
+			// Redeposit eroded snow on same slope in case of snow_erosion=REDEPOSIT: 
+			if (snow_erosion == "REDEPOSIT" && Xdata.ErosionMass > 0. ) {
+				if (snow_redistribution && !Xdata.windward && !Xdata.leeward) {
+					// Redeposit snow if slope is 1) Main Station 2) not luv 3) not lee (lee deposition is handled by snow_redistribution in Main.cc)
+					RedepositSnow(Mdata, Xdata, Sdata, Xdata.ErosionMass);
+				}else if (!snow_redistribution)	{ // if snow_redistribution is not set, we redeposit snow on all slopes.
+					RedepositSnow(Mdata, Xdata, Sdata, Xdata.ErosionMass);
+				}
+			}
+
 		} else
 			snowdrift.compSnowDrift(Mdata, Xdata, Sdata, cumu_precip);
 

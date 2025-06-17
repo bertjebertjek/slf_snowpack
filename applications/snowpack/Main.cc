@@ -69,7 +69,8 @@ class Slope {
 		unsigned int luv;
 		unsigned int lee;
 		bool north, south;
-		bool snow_erosion, mainStationDriftIndex;
+		std::string snow_erosion;
+		bool mainStationDriftIndex;
 		bool snow_redistribution, luvDriftIndex;
 
 		unsigned int getSectorDir(const double& dir_or_expo) const;
@@ -119,6 +120,38 @@ struct MainControl
 	bool   resFirstDump; ///< Flag to dump initial state of snowpack
 };
 
+/**
+ * @brief Returns the erosion type as defined in the configuration file
+ * @param cfg SnowpackConfig object
+ * @return erosion type as string
+ * @throws UnknownValueException if the value is not valid
+ * @todo /TODO this should really be moved to Utils.cc or some init module. 
+ * But because snowpackConfig / Snowpack are initialized every time step (yikes) that is currently not feasible. 
+ * Specifially, the (re-)initialization of SnowDrift in runSnowpackModel() makes this very messy.
+ */
+static std::string get_erosion(const SnowpackConfig& cfg)
+{
+	std::string erosion = "NONE";
+	cfg.getValue("SNOW_EROSION", "SnowpackAdvanced", erosion);
+	std::transform(erosion.begin(), erosion.end(), erosion.begin(), ::toupper);	// Force upper case
+	if (erosion != "NONE" && erosion != "VIRTUAL" && erosion != "HS_DRIVEN" && erosion != "FREE" && erosion != "REDEPOSIT") {
+		if (erosion == "TRUE") { // SNOW_EROSION==TRUE is deprecated and now interpreted as HS_DRIVEN.
+			erosion="HS_DRIVEN";
+			std::stringstream msg;
+			msg <<"WARNING: EROSION=TRUE is deprecated and will be interpreted as 'HS_DRIVEN'. Please update .ini settings. \
+			// 	Valid options are 'NONE', 'HS_DRIVEN', 'VIRTUAL', 'FREE', and 'REDEPOSIT' ";
+			// WARN(msg.str() );
+		} else if (erosion == "FALSE") { // SNOW_EROSION==FALSE is deprecated and now interpreted as NONE.
+			erosion="NONE";
+		} else {
+			std::stringstream msg;
+			msg << "Value provided for SNOW_EROSION (" << erosion << ") is not valid. Choose either NONE, VIRTUAL, HS_DRIVEN, FREE or REDEPOSIT.";
+			throw UnknownValueException(msg.str(), AT);
+		}
+	}
+	return erosion;
+}
+
 /************************************************************
  * non-static section                                       *
  ************************************************************/
@@ -127,7 +160,7 @@ Slope::Slope(const mio::Config& cfg)
        : prevailing_wind_dir(0.), nSlopes(0), mainStation(0), sector(0),
          first(1), luv(0), lee(0),
          north(false), south(false),
-         snow_erosion(false), mainStationDriftIndex(false),
+         snow_erosion("NONE"), mainStationDriftIndex(false),
          snow_redistribution(false), luvDriftIndex(false),
          sector_width(0)
 {
@@ -1261,7 +1294,7 @@ inline void real_main (int argc, char *argv[])
 						surfFluxes.cRho_hn = vecXdata[slope.mainStation].rho_hn;
 						surfFluxes.mRho_hn = Mdata.rho_hn;
 					}
-					if (slope.snow_erosion) {
+					if (slope.snow_erosion != "NONE") {
 						// Update drifting snow index (VI24),
 						//   from erosion at the main station only if no virtual slopes are available
 						if (slope.mainStationDriftIndex)
