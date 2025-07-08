@@ -199,6 +199,11 @@ https://snowpack.slf.ch
 			<option value="DOORSCHOT"/>
 			<help>The simple Sorenson parameterization is computationally more efficient than the full Doorschot model (default: SORENSEN)</help>
 		</parameter>
+		<parameter key="ENHANCED_WIND_SLAB" type="alternative" longlabel="true">
+			<option value="TRUE"/>
+			<option value="FALSE"/>
+			<help>Enhanced wind compaction in the upper 7 cm of the snowpack, following Eqs. 2 and 3 in &lt;a href=&quot;https://doi.org/10.5194/tc-7-333-2013&quot;&gt;Groot Zwaaftink et al. (2013)&lt;/a&gt;, to describe wind slab formation. This key is always set to TRUE when using the POLAR or ANTARCTICA variants, ignoring the configuration set by the user. (default: FALSE)</help>
+		</parameter>
 		<!-- <parameter key="SURFACECODE" type="alternative">
 			<option value="NEUMANN_BC"/>
 			<option value="DIRICHLET_BC"/>

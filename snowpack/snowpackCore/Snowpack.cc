@@ -231,7 +231,7 @@ Snowpack::Snowpack(const SnowpackConfig& i_cfg)
 	cfg.getValue("T_CRAZY_MIN", "SnowpackAdvanced", t_crazy_min);
 	cfg.getValue("T_CRAZY_MAX", "SnowpackAdvanced", t_crazy_max);
 	cfg.getValue("FORESTFLOOR_ALB", "SnowpackAdvanced", forestfloor_alb);
-
+	cfg.getValue("ENHANCED_WIND_SLAB", "SnowpackAdvanced", enhanced_wind_slab);
 
 	/* Initial new snow parameters, see computeSnowFall()
 	* - that rg and rb are equal to 0.5*gsz and 0.5*bsz, respectively. Both given in millimetres
@@ -246,7 +246,6 @@ Snowpack::Snowpack(const SnowpackConfig& i_cfg)
 		vw_dendricity = false;
 		rh_lowlim = 0.7;
 		bond_factor_rh = 3.0;
-		enhanced_wind_slab = true;
 		ageAlbedo = false;
 	} else {
 		new_snow_dd = 1.0;
@@ -256,7 +255,6 @@ Snowpack::Snowpack(const SnowpackConfig& i_cfg)
 		vw_dendricity = true;
 		rh_lowlim = 1.0;
 		bond_factor_rh = 1.0;
-		enhanced_wind_slab = false; //true; //
 	}
 
 	cfg.getValue("NEW_SNOW_GRAIN_SIZE", "SnowpackAdvanced", new_snow_grain_size);
@@ -387,8 +385,9 @@ void Snowpack::compSnowCreep(const CurrentMeteo& Mdata, SnowStation& Xdata)
 			if ((EMS[e].theta[WATER] < SnowStation::thresh_moist_snow)
 			      && (Mdata.vw > Metamorphism::wind_slab_vw)
 			        && ((dz < Metamorphism::wind_slab_depth) || (e == nE-1))) {
-				if (Snowpack::enhanced_wind_slab) { //NOTE tested with Antarctic variant: effects heavily low density snow
+				if (enhanced_wind_slab) { //NOTE tested with Antarctic variant: effects heavily low density snow
 					// fits original parameterization at Metamorphism::wind_slab_vw + 0.6 m/s
+					// See Eqs. 2 and 3 in Groot Zwaaftink et al. (2013), doi: 10.5194/tc-7-333-2013
 					wind_slab += 2.7 * Metamorphism::wind_slab_enhance
 					                 * Optim::pow3(dv) * (1. - dz / (1.25 * Metamorphism::wind_slab_depth));
 				} else {

@@ -51,6 +51,7 @@ bool SnowpackConfig::initStaticData()
 	advancedConfig["ALBEDO_AGING"] = "true";
 	advancedConfig["COUPLEDPHASECHANGES"] = "false";
 	advancedConfig["ENABLE_VAPOUR_TRANSPORT"] = "false";
+	advancedConfig["ENHANCED_WIND_SLAB"] = "false";
 	advancedConfig["FIXED_POSITIONS"] = "";
 	advancedConfig["FORCE_RH_WATER"] = "true";
 	advancedConfig["HARDNESS_PARAMETERIZATION"] = "MONTI";
@@ -247,6 +248,7 @@ void SnowpackConfig::setDefaults()
 		if (watertransportmodel_soil.empty()) addKey("WATERTRANSPORTMODEL_SOIL", "SnowpackAdvanced", "NIED");
 
 	} else if (variant == "ANTARCTICA" || variant == "POLAR") {
+		addKey("ENHANCED_WIND_SLAB", "SnowpackAdvanced", "TRUE");
 		if (variant == "ANTARCTICA") {
 			if (hn_density.empty()) addKey("HN_DENSITY", "SnowpackAdvanced", "EVENT");
 
