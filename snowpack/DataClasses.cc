@@ -1442,6 +1442,10 @@ bool ElementData::checkVolContent()
 		prn_msg(__FILE__, __LINE__, "wrn", Date(), "Negative AIR volumetric content: %1.4f", theta[AIR]);
 		ret = false;
 	}
+	if(((theta[WATER] + theta[WATER_PREF]) * Constants::density_water / Constants::density_ice) + theta[ICE] + theta[SOIL] > 1. + 2.*Constants::eps) {
+		prn_msg(__FILE__, __LINE__, "wrn", Date(), "Too much water: %1.4f %1.4f %1.4f %1.4f", (theta[WATER] + theta[WATER_PREF]), theta[ICE], theta[SOIL], theta[AIR]);
+		ret = false;
+	}
 
 	// Take care of small rounding errors, in case large rounding errors do not exist.
 	if (ret == true) {
@@ -2754,7 +2758,7 @@ void SnowStation::splitElements(const double& max_element_length, const double& 
  * @param merge True if upper element is to be joined with lower one, false if upper element is to be removed
  * @param topElement set to true if the upper element is at the very top of the snow pack
  */
-void SnowStation::mergeElements(ElementData& EdataLower, const ElementData& EdataUpper, const bool& merge, const bool& topElement)
+void SnowStation::mergeElements(ElementData& EdataLower, const ElementData& EdataUpper, const bool& merge, const bool& topElement, const bool& VapourTransport)
 {
 	const double L_lower = EdataLower.L; //Thickness of lower element
 	const double L_upper = EdataUpper.L; //Thickness of upper element
@@ -2798,20 +2802,31 @@ void SnowStation::mergeElements(ElementData& EdataLower, const ElementData& Edat
 	EdataLower.theta[AIR] = 1.0 - EdataLower.theta[WATER] - EdataLower.theta[WATER_PREF] - EdataLower.theta[ICE] - EdataLower.theta[SOIL];
 	EdataLower.salinity = (L_upper * EdataUpper.salinity + L_lower * EdataLower.salinity) / LNew;
 	// For snow, check if there is enough space to store all ice if all water would freeze. This also takes care of cases where theta[AIR]<0.
-	if ((merge==false && topElement==true) && EdataLower.theta[SOIL]<Constants::eps2 && EdataLower.theta[AIR] < (EdataLower.theta[WATER]+EdataLower.theta[WATER_PREF])*((Constants::density_water/Constants::density_ice)-1.)) {
-		// Note: we can only do this for the uppermost snow element, as otherwise it is not possible to adapt the element length.
-		// If there is not enough space, adjust element length:
-		EdataLower.theta[AIR] = (EdataLower.theta[WATER]+EdataLower.theta[WATER_PREF])*((Constants::density_water/Constants::density_ice)-1.);
-		const double tmpsum = EdataLower.theta[AIR]+EdataLower.theta[ICE]+EdataLower.theta[WATER]+EdataLower.theta[WATER_PREF]; // Not adding ice reservoirs here
-		// Ensure that the element does not become larger than the sum of lengths of the original ones (no absolute element "growth")!
-		LNew = std::min(LNew * tmpsum, L_lower + L_upper);
-		EdataLower.L0 = EdataLower.L = LNew;
-		EdataLower.theta[AIR] /= tmpsum;
-		EdataLower.theta[ICE] /= tmpsum;
-		EdataLower.theta_i_reservoir /= tmpsum; // Recalculate ice reservoir
-		EdataLower.theta_i_reservoir_cumul /= tmpsum; // Recalculate cumulated ice reservoir
-		EdataLower.theta[WATER] /= tmpsum;
-		EdataLower.theta[WATER_PREF] /= tmpsum;
+	if ((merge==false && topElement==true) && EdataLower.theta[AIR] < (EdataLower.theta[WATER]+EdataLower.theta[WATER_PREF])*((Constants::density_water/Constants::density_ice)-1.)) {
+		if(EdataLower.theta[SOIL]<Constants::eps2) {
+			// Note: we can only do this for the uppermost snow element, as otherwise it is not possible to adapt the element length.
+			// If there is not enough space, adjust element length:
+			EdataLower.theta[AIR] = (EdataLower.theta[WATER]+EdataLower.theta[WATER_PREF])*((Constants::density_water/Constants::density_ice)-1.);
+			const double tmpsum = EdataLower.theta[AIR]+EdataLower.theta[ICE]+EdataLower.theta[WATER]+EdataLower.theta[WATER_PREF]; // Not adding ice reservoirs here
+			// Ensure that the element does not become larger than the sum of lengths of the original ones (no absolute element "growth")!
+			LNew = std::min(LNew * tmpsum, L_lower + L_upper);
+			EdataLower.L0 = EdataLower.L = LNew;
+			EdataLower.theta[AIR] /= tmpsum;
+			EdataLower.theta[ICE] /= tmpsum;
+			EdataLower.theta_i_reservoir /= tmpsum; // Recalculate ice reservoir
+			EdataLower.theta_i_reservoir_cumul /= tmpsum; // Recalculate cumulated ice reservoir
+			EdataLower.theta[WATER] /= tmpsum;
+			EdataLower.theta[WATER_PREF] /= tmpsum;
+		} else {
+			if (VapourTransport) {
+				double tmp_dV = -1.0 * (1.0 - ((EdataLower.theta[WATER] - EdataLower.theta[WATER_PREF]) * (Constants::density_water / Constants::density_ice)) - EdataLower.theta[ICE] - EdataLower.theta[SOIL]);
+				prn_msg(__FILE__, __LINE__, "wrn", Date(), "FIXME! Too little pore space, throwing away some mass... volumetric content error: %f m3/m3", tmp_dV);
+				EdataLower.theta[ICE] -= tmp_dV * (EdataLower.theta[ICE]) / (EdataLower.theta[ICE] + ((EdataLower.theta[WATER] - EdataLower.theta[WATER_PREF]) * (Constants::density_water / Constants::density_ice)));
+				EdataLower.theta[WATER] -= tmp_dV * (EdataLower.theta[WATER]) / (EdataLower.theta[ICE] + ((EdataLower.theta[WATER] - EdataLower.theta[WATER_PREF]) * (Constants::density_water / Constants::density_ice)));
+				EdataLower.theta[WATER_PREF] -= tmp_dV * (EdataLower.theta[WATER_PREF]) / (EdataLower.theta[ICE] + ((EdataLower.theta[WATER] - EdataLower.theta[WATER_PREF]) * (Constants::density_water / Constants::density_ice)));
+				EdataLower.theta[AIR] = 1.0 - EdataLower.theta[WATER] - EdataLower.theta[WATER_PREF] - EdataLower.theta[ICE] - EdataLower.theta[SOIL];
+			}
+		}
 	}
 	EdataLower.snowResidualWaterContent();
 	EdataLower.updDensity();

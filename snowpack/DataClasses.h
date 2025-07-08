@@ -616,7 +616,7 @@ class SnowStation {
 		void reduceNumberOfElements(const size_t& rnE);
 		void combineElements(const size_t& number_top_elements, const bool& reduce_n_elements, const size_t& cond, const double& comb_thresh_l);
 		static bool combineCondition(const ElementData& Edata0, const ElementData& Edata1, const double& depth, const bool& reduce_n_elements, const double& comb_thresh_l);
-		static void mergeElements(ElementData& Edata0, const ElementData& Edata1, const bool& merge, const bool& topElement);
+		static void mergeElements(ElementData& Edata0, const ElementData& Edata1, const bool& merge, const bool& topElement, const bool& VapourTransport = false);
 		void splitElement(const size_t& e);							//Split an element
 		void splitElements(const double& max_element_length, const double& comb_thresh_l);	//Check for splitting, calls splitElement(...) for actual splitting
 

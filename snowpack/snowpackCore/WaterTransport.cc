@@ -508,7 +508,7 @@ void WaterTransport::compTopFlux(double& ql, SnowStation& Xdata, SurfaceFluxes& 
  * @param *Xdata
  * @param *Sdata
  */
-void WaterTransport::mergingElements(SnowStation& Xdata, SurfaceFluxes& Sdata)
+void WaterTransport::mergingElements(SnowStation& Xdata, SurfaceFluxes& Sdata, const bool& VapourTransport)
 {
 	const size_t nN = Xdata.getNumberOfNodes(), nE = nN-1;
 	size_t rnN = nN, rnE = nN-1;
@@ -614,7 +614,7 @@ void WaterTransport::mergingElements(SnowStation& Xdata, SurfaceFluxes& Sdata)
 						if (iwatertransportmodel_soil != RICHARDSEQUATION) {
 							if (Xdata.SoilNode > 0) {
 								// Only move water into soil when we don't run richardssolver for soil ...
-								SnowStation::mergeElements(EMS[eUpper-1], EMS[eUpper], merged, (eUpper==rnE-1 && variant != "SEAICE"));
+								SnowStation::mergeElements(EMS[eUpper-1], EMS[eUpper], merged, (eUpper==rnE-1 && variant != "SEAICE"), VapourTransport);
 							}
 						} else {
 							// ... otherwise put it in surfacefluxrate
@@ -1297,7 +1297,7 @@ void WaterTransport::compTransportMass(const CurrentMeteo& Mdata,
 	if (!enable_vapour_transport) {
 		compTopFlux(ql, Xdata, Sdata);
 	}
-	mergingElements(Xdata, Sdata);
+	mergingElements(Xdata, Sdata, false);
 
 	try {
 		adjustDensity(Xdata);
