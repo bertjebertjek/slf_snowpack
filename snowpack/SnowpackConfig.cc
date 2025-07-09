@@ -54,6 +54,7 @@ bool SnowpackConfig::initStaticData()
 	advancedConfig["ENHANCED_WIND_SLAB"] = "false";
 	advancedConfig["FIXED_POSITIONS"] = "";
 	advancedConfig["FORCE_RH_WATER"] = "true";
+	advancedConfig["FORCE_ADD_SNOWFALL"] = "false";
 	advancedConfig["HARDNESS_PARAMETERIZATION"] = "MONTI";
 	advancedConfig["HEIGHT_NEW_ELEM"] = "0.02";
 	advancedConfig["HN_DENSITY"] = "PARAMETERIZED";
