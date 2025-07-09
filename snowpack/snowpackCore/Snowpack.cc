@@ -1367,8 +1367,7 @@ void Snowpack::setHydrometeorMicrostructure(const CurrentMeteo& Mdata, const boo
 		elem.theta[AIR] = 1. - elem.theta[ICE];  // void content
 	} else { // no Graupel
 		elem.mk = Snowpack::new_snow_marker;
-		if (SnLaws::jordy_new_snow && (Mdata.vw > 2.9)
-			&& ((hn_density_parameterization == "LEHNING_NEW") || (hn_density_parameterization == "LEHNING_OLD"))) {
+		if ((Mdata.vw > 2.9) && (hn_density_parameterization == "JORDY")) {
 			elem.dd = std::max(0.5, std::min(1.0, Optim::pow2(1.87 - 0.04*Mdata.vw)) );
 			elem.sp = new_snow_sp;
 			static const double alpha = 0.9, beta = 0.015, gamma = -0.0062;
@@ -1377,17 +1376,20 @@ void Snowpack::setHydrometeorMicrostructure(const CurrentMeteo& Mdata, const boo
 				alpha + beta*TA + gamma*RH + delta*Mdata.vw
 				+ eta*RH*Mdata.vw + phi*TA*Mdata.vw));
 			elem.rb = 0.4*elem.rg;
-		} else {
+		} else {  // this should just be the default option, and the other clauses set afterwards?
 			elem.dd = new_snow_dd;
 			elem.sp = new_snow_sp;
 			// Adapt dd and sp for blowing snow
-			if ((Mdata.vw > 5.) && ((variant == "ANTARCTICA" || variant == "POLAR")
-			|| (!SnLaws::jordy_new_snow && ((hn_density_parameterization == "BELLAIRE")
-			|| (hn_density_parameterization == "LEHNING_NEW"))))) {
+			if (  	(Mdata.vw > 5.) 
+				&&	( 	(variant == "ANTARCTICA" || variant == "POLAR")
+						|| ((hn_density_parameterization == "BELLAIRE")
+						|| (hn_density_parameterization == "LEHNING_NEW")) )
+				) {
 				elem.dd = new_snow_dd_wind;
 				elem.sp = new_snow_sp_wind;
-			} else if (vw_dendricity && ((hn_density_parameterization == "BELLAIRE")
-				|| (hn_density_parameterization == "ZWART"))) {
+			} else if ( 	vw_dendricity 
+						&& 	((hn_density_parameterization == "BELLAIRE") || (hn_density_parameterization == "ZWART"))
+					) {
 				const double vw = std::max(0.05, Mdata.vw);
 				elem.dd = (1. - pow(vw/10., 1.57));
 				elem.dd = std::max(0.2, elem.dd);
