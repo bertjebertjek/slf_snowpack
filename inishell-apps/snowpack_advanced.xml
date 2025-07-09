@@ -123,6 +123,11 @@ https://snowpack.slf.ch
 	</parametergroup>
 
 	<frame caption="Precipitation Handling" section="SnowpackAdvanced" collapsed="true">
+		<parameter key="FORCE_ADD_SNOWFALL" type="alternative">
+			<option value="TRUE"/>
+			<option value="FALSE"/>
+			<help>If TRUE: skip the internal storage (cumu_precip) and add snowfall timely to the snowpack when precipitation is present, regardless whether or not HEIGHT_NEW_ELEM equivalent of precipitation is present. (default: FALSE)</help>
+		</parameter>
 		<parameter key="THRESH_RAIN" type="number" format="decimal" precision="2" unit="°C">
 			<help>Fallback temperature threshold for rain/snow transition if no other spliting method is provided (as data generator). (Default: 1.2°C)</help>
 		</parameter>
