@@ -384,8 +384,8 @@ size_t SeaIce::ThetaIceStepDetection(SnowStation& Xdata)
 double SeaIce::findIceSurface(SnowStation& Xdata)
 {
 	const size_t nE = Xdata.getNumberOfElements();
-	const bool useStepDetection = true; // If true, use the Step Detection algorithm. If false, use the original method to find the first layer from the top that has ice density.
-	                                    // FIXME: the original method can be removed, once the Step Detection algorithm is found to work well
+	const bool useStepDetection = false; // If true, use the Step Detection algorithm. If false, use the original method to find the first layer from the top that has ice density.
+	                                     // FIXME: the original method can be removed, once the Step Detection algorithm is found to work well
 
 	// Now find ice/snow transition
 	if(nE == 0) {
