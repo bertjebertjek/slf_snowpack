@@ -64,7 +64,6 @@ using namespace mio;
  * <tr><th>T</th><td>layer temperature [K]</td></tr>
  * <tr><th>Vol_Frac_I</th><td>fractional ice volume [0-1]</td></tr>
  * <tr><th>Vol_Frac_W</th><td>fractional water volume [0-1]</td></tr>
- * <tr><th>Vol_Frac_WP</th><td>fractional preferential water volume [0-1]</td></tr>
  * <tr><th>Vol_Frac_V</th><td>fractional voids volume [0-1]</td></tr>
  * <tr><th>Vol_Frac_S</th><td>fractional soil volume [0-1]</td></tr>
  * <tr><th>Rho_S</th><td>soil density [kg/m3]</td></tr>
@@ -84,6 +83,13 @@ using namespace mio;
  * <tr><th> <br></th><td> </td></tr>
  * </table></td></tr>
  * </table></center>
+ * 
+ * Depending on the sub-models that have been enabled, it might be necessary to provide additional fields:
+ *  - \ref preferential_flow "Preferential flow": 
+ *        - Vol_Frac_WP - fractional preferential water volume [0-1];
+ *  - \ref ice_reservoir "Ice reservoir": 
+ *        - Vol_Frac_IR - fractional ice reservoir volume [0-1];
+ *        - Vol_Frac_CIR - cummulated ice reservoir volume;
  *
  * Usually, simulations are started at a point in time when no snow is on the ground, therefore not requiring the definition of snow layers. An example is given below with one snow layer (and some comments to explain the different keys in the header):
  * @code
