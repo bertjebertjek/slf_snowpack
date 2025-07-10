@@ -225,6 +225,10 @@ bool SnLaws::setStaticData(const std::string& variant, const std::string& watert
 			visc_water_fudge = 33.;
 		}
 		setfix = false;
+		// For other variants, event_wind is used in conjunction with WIND_EROSION == REDEPOSIT, in which case there is no wind speed limit on redeposition.
+		event = event_wind;
+		event_wind_lowlim = 0.0;
+		event_wind_highlim = 100.0;
 	}
 
 	// snow extinction coefficients; values in use since r140

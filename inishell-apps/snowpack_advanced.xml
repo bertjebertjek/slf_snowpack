@@ -69,9 +69,18 @@ https://snowpack.slf.ch
 			<help>Sometimes at the end of the snow melt, there is still some snow left in the simulation but none left in reality. This can be problematic when forcing the model with reflected short wave radiation, because a low measured RSWR (iswr reflected on a dark ground) will be used to generate a low ISWR, resulting in even less snow melt. Setting FORCE_SW_MODE to TRUE allows Snowpack to use the potential ISWR when the remaining snow height is less than 10cm, the relative humidity is low enough and the measured RSWR is very low compared to the potential incoming short wave radiation. (default: FALSE)</help>
 		</parameter>
 		<parameter key="SNOW_EROSION" type="alternative" longlabel="true">
-			<option value="TRUE"/>
-			<option value="FALSE"/>
-			<help>Specifies if snow erosion is enabled for the main station. Works only if measured heigths of snow are available at the main station. Unless NUMBER_SLOPES is set to 1, this erosion will not contribute to the drifting snow index (compare with SNOW_REDISTRIBUTION). (default: FALSE)</help>
+			<option value="NONE"/>
+			<option value="HS_DRIVEN"/>
+			<option value="REDEPOSIT"/>
+			<option value="FREE"/>
+			<option value="VIRTUAL"/>
+			<help>Specifies if snow erosion is enabled. Options are: 
+			 - NONE (Default, previously FALSE);
+			 - HS_DRIVEN (previously TRUE): erodes snow based on difference between modelled and measured snow depth. 
+			 - REDEPOSIT: eroded snow is redeposited at the same slope, but density is adjusted based on wind speed and temperature. Thought to simulate wind densification. The parameter DENSITY_REDEPOSIT can be used to set the density parameterization of the redeposited snow.
+			 - FREE: snow is eroded without constraints, and the eroded mass is removed from the snowpack (unless snow_redistribution is enabled, in which case the luv-eroded snow is redeposited on the lee slope).
+			 - VIRTUAL: snow is not actually eroded, but erosion is calculated. Careful when combining with SNOW_REDISTRIBUTION, in which case the virtually eroded mass IS added to the lee slope.	
+			</help>
 		</parameter>
 		<parameter key="WIND_SCALING_FACTOR" type="number" format="decimal" precision="1" min="0" max="2" longlabel="true">
 			<help>Scaling factor to apply to wind values causing drifting snow because some stations consistently measure a wind that is too low (this should be computed from statistical analysis). (default: 1.0)</help>
@@ -367,6 +376,13 @@ https://snowpack.slf.ch
 			</option>
 			<help>New snow density scheme. By default, Snowpack uses "PARAMETERIZED". If selecting "MEASURED", the new snow density must be provided under the parameter name "RHO_HN".</help>
 		</parameter>
+
+		<parameter key="DENSITY_REDEPOSIT" type="alternative" longlabel="true">
+			<option value="EVENT"/>
+			<option value="PARAMETERIZED"/>
+			<option value="a value of HN_DENSITY_PARAMETERIZATION"/>
+			<help> Specifies the density parameterization used for snow that is redistributed when SNOW_EROSION=REDEPOSIT (and in the future, SNOW_REDISTRIBUTION). EVENT uses the event-based scheme developed for Antartica (based on Groot Zwaaftink et al.: Event-driven deposition of snow on the Antarctic Plateau: analyzing field measurements with SNOWPACK https://doi.org/10.5194/tc-7-333-2013). PARAMETERIZED will use the same value of HN_DENSITY_PARAMETERIZATION, whereas picking another value from that list allows the user to have different density parameterizations for snowfall (HN_DENSITY_PARAMETERIZATION) and wind redeposition (DENSITY_REDEPOSIT) (default: EVENT).</help>
+
 		<parameter key="SNOW_ALBEDO" type="alternative" longlabel="true">
 			<option value="PARAMETERIZED">
 				<parameter key="ALBEDO_PARAMETERIZATION" type="alternative">

@@ -258,9 +258,10 @@ Snowpack::Snowpack(const SnowpackConfig& i_cfg)
 		bond_factor_rh = 1.0;
 	}
 
-	cfg.getValue("SNOW_EROSION", "SnowpackAdvanced", snow_erosion);
-	std::transform(snow_erosion.begin(), snow_erosion.end(), snow_erosion.begin(), ::toupper);	// Force upper case
-	// check for legacy values of snow_erosion???
+	// cfg.getValue("SNOW_EROSION", "SnowpackAdvanced", snow_erosion);
+	// std::transform(snow_erosion.begin(), snow_erosion.end(), snow_erosion.begin(), ::toupper);	// Force upper case
+	snow_erosion = get_erosion(cfg); // read in snow_erosion, and check for legacy values of snow_erosion (TRUE/FALSE are deprecated)
+
 	cfg.getValue("SNOW_REDISTRIBUTION", "SnowpackAdvanced", snow_redistribution); 	
 	cfg.getValue("NEW_SNOW_GRAIN_SIZE", "SnowpackAdvanced", new_snow_grain_size);
 	new_snow_bond_size = 0.25 * new_snow_grain_size;
@@ -1941,12 +1942,12 @@ void Snowpack::compSnowFall(const CurrentMeteo& Mdata, SnowStation& Xdata, doubl
  * @param Mdata Meteorological data (pass by value, since we modify it)
  * @param Xdata Snow cover data
  * @param redeposit_mass cumulated amount of snow deposition (kg m-2)
- * @param density_redist allow for different density setting for the redeposited snow:
+ * @param density_redep allow for different density setting for the redeposited snow:
  * 	 - "EVENT" (default): use the EVENT scheme from Groot-Zwaaftink (this is the default if nothing is set - see Snowpack.h),
  * 	 - "PARAMETERIZED": to use the same hn_density_parameterization as regular snowfall (set in ini file or default LEHNING_NEW), 
  *   -  a member of the hn_density_parameterization: to use a specific scheme other than the one used for 'normal' snowfall. 
  */
-void Snowpack::RedepositSnow(CurrentMeteo Mdata, SnowStation& Xdata, SurfaceFluxes& Sdata, double redeposit_mass, const std::string density_redist)
+void Snowpack::RedepositSnow(CurrentMeteo Mdata, SnowStation& Xdata, SurfaceFluxes& Sdata, double redeposit_mass, const std::string density_redep)
 {
 	// Backup settings we are going to override:
 	const bool tmp_force_add_snowfall = force_add_snowfall;
@@ -1963,17 +1964,18 @@ void Snowpack::RedepositSnow(CurrentMeteo Mdata, SnowStation& Xdata, SurfaceFlux
 	force_add_snowfall = true;
 	
 	// set the density of the redeposited snow:
-	if (density_redist == "EVENT" ) {
+	if (density_redep == "EVENT" ) {
 		hn_density = "EVENT";
 		// The EVENT scheme uses vw_avg and rh_avg in the calculations. In the REDEPOSIT scheme, we force the use of instantaneous values for wind speed and relative humidity:
 		Mdata.vw_avg = Mdata.vw;
 		Mdata.rh_avg = Mdata.rh;
-	}else if (density_redist == "PARAMETERIZED"){ //use same density as hn_density_parameterization
+	}else if (density_redep == "PARAMETERIZED"){ //use same density as hn_density_parameterization
 		hn_density = "PARAMETERIZED";	
 	} else { // use a specific scheme from the hn_density_parameterizations in Laws_sn.cc
 		hn_density = "PARAMETERIZED";
-		hn_density_parameterization = density_redist;
+		hn_density_parameterization = density_redep;
 	}
+	// prn_msg(__FILE__, __LINE__, "msg+", Mdata.date, "ReDepositing) w/ total mass %.3lf kg/m2 with hn_density %s and hn_denisty_param%s ", Xdata.ErosionMass, hn_density.c_str(), hn_density_parameterization.c_str());
 	
 	if (variant=="ANTARCTICA") variant = "POLAR";		// Ensure that the ANTARCTICA wind speed limits are *not* used.
 	enforce_measured_snow_heights = false;
@@ -2080,7 +2082,7 @@ void Snowpack::runSnowpackModel(CurrentMeteo& Mdata, SnowStation& Xdata, double&
 	// ADJUST_HEIGHT_OF_METEO_VALUE is checked at each call to allow different
 	// cfg values for different pixels in Alpine3D
 	cfg.getValue("ADJUST_HEIGHT_OF_METEO_VALUES", "SnowpackAdvanced", adjust_height_of_meteo_values);
-
+	const string density_redeposit = cfg.get("DENSITY_REDEPOSIT", "SnowpackAdvanced");
 
 	try {
 		//since precipitation phase is a little less intuitive than other, measured parameters, make sure it is provided
@@ -2113,9 +2115,9 @@ void Snowpack::runSnowpackModel(CurrentMeteo& Mdata, SnowStation& Xdata, double&
 			if (snow_erosion == "REDEPOSIT" && Xdata.ErosionMass > 0. ) {
 				if (snow_redistribution && !Xdata.windward && !Xdata.leeward) {
 					// Redeposit snow if slope is 1) Main Station 2) not luv 3) not lee (lee deposition is handled by snow_redistribution in Main.cc)
-					RedepositSnow(Mdata, Xdata, Sdata, Xdata.ErosionMass);
+					RedepositSnow(Mdata, Xdata, Sdata, Xdata.ErosionMass, density_redeposit);
 				}else if (!snow_redistribution)	{ // if snow_redistribution is not set, we redeposit snow on all slopes.
-					RedepositSnow(Mdata, Xdata, Sdata, Xdata.ErosionMass);
+					RedepositSnow(Mdata, Xdata, Sdata, Xdata.ErosionMass, density_redeposit);
 				}
 			}
 

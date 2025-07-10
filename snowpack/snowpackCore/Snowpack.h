@@ -67,7 +67,7 @@ class Snowpack {
 		 * is determined by the density_redist parameter, which can be set to "EVENT" (default) or "PARAMETERIZED" (same hn_density scheme as used for new snow) or 
 		 * a different setting from the hn_density options. 
 		 */
-		void RedepositSnow(CurrentMeteo Mdata, SnowStation& Xdata, SurfaceFluxes& Sdata, double redeposit_mass, const std::string density_redist="EVENT");
+		void RedepositSnow(CurrentMeteo Mdata, SnowStation& Xdata, SurfaceFluxes& Sdata, double redeposit_mass, const std::string density_redep="EVENT");
 
 		/**
 		 * @brief Specifies what kind of boundary condition is to be implemented at the top surface.
@@ -147,7 +147,6 @@ class Snowpack {
 		bool soil_flux, useSoilLayers;
 		bool coupled_phase_changes;
 		bool combine_elements, reduce_n_elements;
-		bool force_add_snowfall;
 		bool change_bc, meas_tss;
 		bool vw_dendricity;
 		bool enhanced_wind_slab; ///< to use an even stronger wind slab densification than implemented by default

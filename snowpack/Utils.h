@@ -40,7 +40,7 @@
 //switch to a real, standard compliant compiler
 	#define snprintf _snprintf
 #endif
-
+using namespace std;
 /**
 * @brief Return the library version
 * @return library version string
@@ -86,6 +86,7 @@ void checkOldOutputFiles(const mio::Date& i_date, const std::string& stationID);
 
 double getPerpSensorPosition(const bool& useSoilLayers, const double& z_vert, const double& hs_ref, const double& Ground, const double& SlopeAngle);
 
+std::string get_erosion(const SnowpackConfig& cfg);
 
 class Warning {
 public:

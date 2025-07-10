@@ -85,7 +85,7 @@ bool SnowpackConfig::initStaticData()
 	advancedConfig["PREVAILING_WIND_DIR"] = "0.";
 	advancedConfig["RESEARCH"] = "true";
 	advancedConfig["SNOW_ALBEDO"] = "PARAMETERIZED";
-	advancedConfig["SNOW_EROSION"] = "false";
+	advancedConfig["SNOW_EROSION"] = "NONE";
 	advancedConfig["SNOW_REDISTRIBUTION"] = "false";
 	advancedConfig["SALTATION_MODEL"] = "SORENSEN";
 	advancedConfig["STRENGTH_MODEL"] = "DEFAULT";

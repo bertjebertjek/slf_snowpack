@@ -596,3 +596,34 @@ void cumulate(double& accu, const double value)
 	}
 
 }
+
+
+/**
+ * @brief Returns the erosion type as defined in the configuration file, checks for legacy boolean values.
+ * @param cfg SnowpackConfig object
+ * @return erosion type as string
+ * @throws UnknownValueException if the value is not valid
+ * @todo /TODO Ideally we want to throw a warning only once, but this is not implemented yet. Snowpack and SnowDrift objects should not be initialized every timestep!
+ */
+std::string get_erosion(const SnowpackConfig& cfg)
+{
+	std::string erosion = "NONE";
+	cfg.getValue("SNOW_EROSION", "SnowpackAdvanced", erosion);
+	std::transform(erosion.begin(), erosion.end(), erosion.begin(), ::toupper);	// Force upper case
+	if (erosion != "NONE" && erosion != "VIRTUAL" && erosion != "HS_DRIVEN" && erosion != "FREE" && erosion != "REDEPOSIT") {
+		if (erosion == "TRUE") { // SNOW_EROSION==TRUE is deprecated and now interpreted as HS_DRIVEN.
+			erosion="HS_DRIVEN";
+			std::stringstream msg;
+			msg <<"WARNING: EROSION=TRUE is deprecated and will be interpreted as 'HS_DRIVEN'. Please update .ini settings. \
+			// 	Valid options are 'NONE', 'HS_DRIVEN', 'VIRTUAL', 'FREE', and 'REDEPOSIT' ";
+			// WARN(msg.str() ); // only warn first time. 
+		} else if (erosion == "FALSE") { // SNOW_EROSION==FALSE is deprecated and now interpreted as NONE.
+			erosion="NONE";
+		} else {
+			std::stringstream msg;
+			msg << "Value provided for SNOW_EROSION (" << erosion << ") is not valid. Choose either NONE, VIRTUAL, HS_DRIVEN, FREE or REDEPOSIT.";
+			throw UnknownValueException(msg.str(), AT);
+		}
+	}
+	return erosion;
+}

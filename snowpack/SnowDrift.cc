@@ -43,33 +43,6 @@ const bool SnowDrift::msg_erosion = false;
  * non-static section                                       *
  ************************************************************/
 
-/**
- * @brief Returns the erosion type as defined in the configuration file
- * @param cfg SnowpackConfig object
- * @return erosion type as string
- * @throws UnknownValueException if the value is not valid
- * @todo /TODO this should really be moved to Utils.cc or some init module. 
- * But because snowpackConfig / Snowpack are initialized every time step (yikes) that is currently not feasible. 
- * Specifially, the (re-)initialization of SnowDrift in runSnowpackModel() makes this very messy.
- */
-static std::string get_erosion(const SnowpackConfig& cfg)
-{
-	std::string erosion = "NONE";
-	cfg.getValue("SNOW_EROSION", "SnowpackAdvanced", erosion);
-	std::transform(erosion.begin(), erosion.end(), erosion.begin(), ::toupper);	// Force upper case
-	if (erosion != "NONE" && erosion != "VIRTUAL" && erosion != "HS_DRIVEN" && erosion != "FREE" && erosion != "REDEPOSIT") {
-		if (erosion == "TRUE") { // SNOW_EROSION==TRUE is deprecated and now interpreted as HS_DRIVEN.
-			erosion="HS_DRIVEN";
-		} else if (erosion == "FALSE") { // SNOW_EROSION==FALSE is deprecated and now interpreted as NONE.
-			erosion="NONE";
-		} else {
-			std::stringstream msg;
-			msg << "Value provided for SNOW_EROSION (" << erosion << ") is not valid. Choose either NONE, VIRTUAL, HS_DRIVEN, FREE or REDEPOSIT.";
-			throw UnknownValueException(msg.str(), AT);
-		}
-	}
-	return erosion;
-}
 
 
 static bool get_bool(const SnowpackConfig& cfg, const std::string& key, const std::string& section)
@@ -101,7 +74,8 @@ static double get_sn_dt(const SnowpackConfig& cfg)
 }
 
 SnowDrift::SnowDrift(const SnowpackConfig& cfg) : saltation(cfg),
-                     enforce_measured_snow_heights( get_bool(cfg, "ENFORCE_MEASURED_SNOW_HEIGHTS", "Snowpack") ), snow_redistribution( get_redistribution(cfg) ), snow_erosion( get_bool(cfg, "SNOW_EROSION", "SnowpackAdvanced") ), alpine3d( get_bool(cfg, "ALPINE3D", "SnowpackAdvanced") ),
+                     enforce_measured_snow_heights( get_bool(cfg, "ENFORCE_MEASURED_SNOW_HEIGHTS", "Snowpack") ), snow_redistribution( get_redistribution(cfg) ), 
+					 snow_erosion( get_erosion(cfg) ), alpine3d( get_bool(cfg, "ALPINE3D", "SnowpackAdvanced") ),
                      sn_dt( get_sn_dt(cfg) ) {}
 
 /**
@@ -183,7 +157,7 @@ void SnowDrift::compSnowDrift(const CurrentMeteo& Mdata, SnowStation& Xdata, Sur
 	// Real erosion either on windward virtual slope, from Alpine3D, or at main station.
 	// At main station, measured snow depth controls whether erosion is possible or not if measured snow depth is provided
 	const bool windward = !alpine3d && snow_redistribution && Xdata.windward; // check for windward virtual slope
-	const bool erosion = snow_erosion && (Xdata.mH > (Xdata.Ground + Constants::eps)) && ((Xdata.mH + 0.02) < Xdata.cH);
+	const bool erosion = (  (snow_erosion == "FREE" || snow_erosion == "REDEPOSIT") || (snow_erosion == "HS_DRIVEN" && (Xdata.mH > (Xdata.Ground + Constants::eps)) && ((Xdata.mH + 0.02) < Xdata.cH))  );
 	const double ustar_max = (Mdata.vw>0.1) ? Mdata.ustar * Mdata.vw_drift / Mdata.vw : 0.; // Scale Mdata.ustar
 
 	if (windward || alpine3d || erosion) {
@@ -193,9 +167,9 @@ void SnowDrift::compSnowDrift(const CurrentMeteo& Mdata, SnowStation& Xdata, Sur
 		} else {
 			try {
 				if (enforce_measured_snow_heights && !windward)
-					Sdata.drift = compMassFlux(EMS[nE-1], Mdata.ustar, Xdata.meta.getSlopeAngle()); // kg m-1 s-1, erosion at main station, local vw && nE-1
+					Sdata.drift = compMassFlux(EMS[nE-1], Mdata.ustar, Xdata.meta.getSlopeAngle()); // kg m-1 s-1, erosion at main station, local vw && nE-1 NB: Not just main station!! This will erode all but the windward station
 				else
-					Sdata.drift = compMassFlux(EMS[nE-1], ustar_max, Xdata.meta.getSlopeAngle()); // kg m-1 s-1, windward slope && vw_drift && nE-1
+					Sdata.drift = compMassFlux(EMS[nE-1], ustar_max, Xdata.meta.getSlopeAngle()); // kg m-1 s-1, windward slope && vw_drift && nE-1, and all cases where enforce_measured_snow_heights is false (basically everybody outside SLF?)
 			} catch(const exception&) {
 					prn_msg(__FILE__, __LINE__, "err", Mdata.date, "Cannot compute mass flux of drifting snow!");
 					throw;
@@ -250,7 +224,7 @@ void SnowDrift::compSnowDrift(const CurrentMeteo& Mdata, SnowStation& Xdata, Sur
 		}
 	// ... or, in case of no real erosion, check whether you can potentially erode at windward station using vw_drift.
 	// This will as of 2023 contribute to the drift index VI24, to accommodate the ALPSolut use case!
-	} else if (snow_erosion && (Xdata.ErosionLevel > Xdata.SoilNode) && Xdata.windward) {
+	} else if ((snow_erosion=="VIRTUAL") && (Xdata.ErosionLevel > Xdata.SoilNode) && Xdata.windward) {
 		Sdata.drift = compMassFlux(EMS[Xdata.ErosionLevel], ustar_max, Xdata.meta.getSlopeAngle());  // kg m-1 s-1, main station, local vw && erosion level
 		double virtuallyErodedMass = Sdata.drift * sn_dt / Hazard::typical_slope_length; // Convert to eroded snow mass in kg m-2
 		if (virtuallyErodedMass > Constants::eps) {

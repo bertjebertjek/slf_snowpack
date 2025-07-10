@@ -120,37 +120,6 @@ struct MainControl
 	bool   resFirstDump; ///< Flag to dump initial state of snowpack
 };
 
-/**
- * @brief Returns the erosion type as defined in the configuration file
- * @param cfg SnowpackConfig object
- * @return erosion type as string
- * @throws UnknownValueException if the value is not valid
- * @todo /TODO this should really be moved to Utils.cc or some init module. 
- * But because snowpackConfig / Snowpack are initialized every time step (yikes) that is currently not feasible. 
- * Specifially, the (re-)initialization of SnowDrift in runSnowpackModel() makes this very messy.
- */
-static std::string get_erosion(const SnowpackConfig& cfg)
-{
-	std::string erosion = "NONE";
-	cfg.getValue("SNOW_EROSION", "SnowpackAdvanced", erosion);
-	std::transform(erosion.begin(), erosion.end(), erosion.begin(), ::toupper);	// Force upper case
-	if (erosion != "NONE" && erosion != "VIRTUAL" && erosion != "HS_DRIVEN" && erosion != "FREE" && erosion != "REDEPOSIT") {
-		if (erosion == "TRUE") { // SNOW_EROSION==TRUE is deprecated and now interpreted as HS_DRIVEN.
-			erosion="HS_DRIVEN";
-			std::stringstream msg;
-			msg <<"WARNING: EROSION=TRUE is deprecated and will be interpreted as 'HS_DRIVEN'. Please update .ini settings. \
-			// 	Valid options are 'NONE', 'HS_DRIVEN', 'VIRTUAL', 'FREE', and 'REDEPOSIT' ";
-			// WARN(msg.str() );
-		} else if (erosion == "FALSE") { // SNOW_EROSION==FALSE is deprecated and now interpreted as NONE.
-			erosion="NONE";
-		} else {
-			std::stringstream msg;
-			msg << "Value provided for SNOW_EROSION (" << erosion << ") is not valid. Choose either NONE, VIRTUAL, HS_DRIVEN, FREE or REDEPOSIT.";
-			throw UnknownValueException(msg.str(), AT);
-		}
-	}
-	return erosion;
-}
 
 /************************************************************
  * non-static section                                       *
@@ -165,7 +134,7 @@ Slope::Slope(const mio::Config& cfg)
          sector_width(0)
 {
 	cfg.getValue("NUMBER_SLOPES", "SnowpackAdvanced", nSlopes);
-	cfg.getValue("SNOW_EROSION", "SnowpackAdvanced", snow_erosion);
+	snow_erosion = get_erosion(cfg); 
 	stringstream ss;
 	ss << nSlopes;
 	cfg.getValue("SNOW_REDISTRIBUTION", "SnowpackAdvanced", snow_redistribution);
@@ -204,6 +173,7 @@ void Slope::setSlope(const unsigned int slope_sequence, vector<SnowStation>& vec
 	case 0:
 		for (size_t kk=0; kk<nSlopes; kk++) {
 			vecXdata[kk].windward = false;
+			vecXdata[kk].leeward = false;
 			vecXdata[kk].rho_hn   = 0.;
 			vecXdata[kk].hn       = 0.;
 		}
@@ -224,6 +194,7 @@ void Slope::setSlope(const unsigned int slope_sequence, vector<SnowStation>& vec
 		luvDriftIndex = true;
 		break;
 	default:
+		vecXdata[lee].leeward = true;
 		sector++;
 		if (sector == nSlopes) sector = 1;
 	}
