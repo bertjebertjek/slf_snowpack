@@ -86,7 +86,11 @@ void checkOldOutputFiles(const mio::Date& i_date, const std::string& stationID);
 
 double getPerpSensorPosition(const bool& useSoilLayers, const double& z_vert, const double& hs_ref, const double& Ground, const double& SlopeAngle);
 
-std::string get_erosion(const SnowpackConfig& cfg);
+std::string get_erosion(const SnowpackConfig& cfg,  const bool prnt_wrn = false);
+
+std::string get_redistribution(const SnowpackConfig& cfg,  const bool prnt_wrn = false ); /* [optional] print warning if legacy value is used.  default is false*/
+
+void check_legacy_ini(const SnowpackConfig& cfg);
 
 class Warning {
 public:

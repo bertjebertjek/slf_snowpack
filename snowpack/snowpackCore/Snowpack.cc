@@ -97,7 +97,7 @@ Snowpack::Snowpack(const SnowpackConfig& i_cfg)
             allow_adaptive_timestepping(false), research_mode(false), useCanopyModel(false), enforce_measured_snow_heights(false), detect_grass(false),
             soil_flux(false), useSoilLayers(false), coupled_phase_changes(false), combine_elements(false), reduce_n_elements(false), force_add_snowfall(false),
             change_bc(false), meas_tss(false), vw_dendricity(false),
-            enhanced_wind_slab(false), snow_erosion("NONE"), snow_redistribution(false), alpine3d(false), ageAlbedo(true), adjust_height_of_meteo_values(true),
+            enhanced_wind_slab(false), snow_erosion("NONE"), snow_redistribution("NONE"), alpine3d(false), ageAlbedo(true), adjust_height_of_meteo_values(true),
             adjust_height_of_wind_value(false), advective_heat(false), heat_begin(0.), heat_end(0.),
             temp_index_degree_day(0.), temp_index_swr_factor(0.), forestfloor_alb(false), rime_index(false), newsnow_lwc(false), read_dsm(false), soil_evaporation(), soil_thermal_conductivity()
 {
@@ -261,8 +261,7 @@ Snowpack::Snowpack(const SnowpackConfig& i_cfg)
 	// cfg.getValue("SNOW_EROSION", "SnowpackAdvanced", snow_erosion);
 	// std::transform(snow_erosion.begin(), snow_erosion.end(), snow_erosion.begin(), ::toupper);	// Force upper case
 	snow_erosion = get_erosion(cfg); // read in snow_erosion, and check for legacy values of snow_erosion (TRUE/FALSE are deprecated)
-
-	cfg.getValue("SNOW_REDISTRIBUTION", "SnowpackAdvanced", snow_redistribution); 	
+	snow_redistribution = get_redistribution(cfg); // read in snow_redistribution, and check for legacy values of snow_redistribution (TRUE/FALSE are deprecated)
 	cfg.getValue("NEW_SNOW_GRAIN_SIZE", "SnowpackAdvanced", new_snow_grain_size);
 	new_snow_bond_size = 0.25 * new_snow_grain_size;
 
@@ -1990,7 +1989,7 @@ void Snowpack::RedepositSnow(CurrentMeteo Mdata, SnowStation& Xdata, SurfaceFlux
 	// 	Mdata.date = EnforcedDepositionDate;
 	// }
 
-	// if this redeposit scheme is used for snow_distribution (in Main.cc), luv eroded snow can be deposited on the bare lee ground before runSnowpackMOdel is called, and t_surf is not yet set.
+	// if this redeposit scheme is used for snow_distribution (in Main.cc), luv eroded snow can be deposited on the bare lee ground before runSnowpackModel is called, and t_surf is not yet set.
 	// In this case, we need to set t_surf so the temperature profile can be properly computed after deposition.
 	if (t_surf == Constants::undefined || t_surf == 0.0) {
 		t_surf = std::min(Constants::meltfreeze_tk , Xdata.Ndata[Xdata.getNumberOfNodes()-1].T);
@@ -2115,10 +2114,10 @@ void Snowpack::runSnowpackModel(CurrentMeteo& Mdata, SnowStation& Xdata, double&
 
 			// Redeposit eroded snow on same slope in case of snow_erosion=REDEPOSIT: 
 			if (snow_erosion == "REDEPOSIT" && Xdata.ErosionMass > 0. ) {
-				if (snow_redistribution && !Xdata.windward && !Xdata.leeward) {
+				if ((snow_redistribution!="NONE") && !Xdata.windward && !Xdata.leeward) {
 					// Redeposit snow if slope is 1) Main Station 2) not luv 3) not lee (lee deposition is handled by snow_redistribution in Main.cc)
 					RedepositSnow(Mdata, Xdata, Sdata, Xdata.ErosionMass, density_redeposit);
-				}else if (!snow_redistribution)	{ // if snow_redistribution is not set, we redeposit snow on all slopes.
+				}else if (snow_redistribution=="NONE")	{ // if snow_redistribution is not set, we redeposit snow on all slopes.
 					RedepositSnow(Mdata, Xdata, Sdata, Xdata.ErosionMass, density_redeposit);
 				}
 			}

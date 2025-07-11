@@ -601,29 +601,93 @@ void cumulate(double& accu, const double value)
 /**
  * @brief Returns the erosion type as defined in the configuration file, checks for legacy boolean values.
  * @param cfg SnowpackConfig object
+ * @param prnt_wrn If true, print a warning if legacy ini settings are used. 
  * @return erosion type as string
  * @throws UnknownValueException if the value is not valid
  * @todo /TODO Ideally we want to throw a warning only once, but this is not implemented yet. Snowpack and SnowDrift objects should not be initialized every timestep!
  */
-std::string get_erosion(const SnowpackConfig& cfg)
+std::string get_erosion(const SnowpackConfig& cfg, const bool prnt_wrn)
 {
 	std::string erosion = "NONE";
 	cfg.getValue("SNOW_EROSION", "SnowpackAdvanced", erosion);
 	std::transform(erosion.begin(), erosion.end(), erosion.begin(), ::toupper);	// Force upper case
+	std::stringstream msg;
+
+	///check for legace values.
 	if (erosion != "NONE" && erosion != "VIRTUAL" && erosion != "HS_DRIVEN" && erosion != "FREE" && erosion != "REDEPOSIT") {
 		if (erosion == "TRUE") { // SNOW_EROSION==TRUE is deprecated and now interpreted as HS_DRIVEN.
 			erosion="HS_DRIVEN";
-			std::stringstream msg;
-			msg <<"WARNING: EROSION=TRUE is deprecated and will be interpreted as 'HS_DRIVEN'. Please update .ini settings. \
-			// 	Valid options are 'NONE', 'HS_DRIVEN', 'VIRTUAL', 'FREE', and 'REDEPOSIT' ";
-			// WARN(msg.str() ); // only warn first time. 
+			msg <<" SNOW_EROSION=TRUE is deprecated and is now called 'HS_DRIVEN'. Please update .ini settings. (Valid options are 'NONE', 'HS_DRIVEN', 'VIRTUAL', 'FREE', and 'REDEPOSIT') ";
+			if (prnt_wrn) {
+				WARN(msg.str() ); // only warn first time. (when called from main)
+			}
 		} else if (erosion == "FALSE") { // SNOW_EROSION==FALSE is deprecated and now interpreted as NONE.
 			erosion="NONE";
+			msg <<" SNOW_EROSION=FALSE is deprecated and is now called 'NONE'. Please update .ini settings. ";		// Valid options are 'NONE', 'HS_DRIVEN', 'VIRTUAL', 'FREE', and 'REDEPOSIT' ";
+			if (prnt_wrn) {
+				WARN(msg.str() ); // only warn first time. (when called from main)
+			}
 		} else {
-			std::stringstream msg;
 			msg << "Value provided for SNOW_EROSION (" << erosion << ") is not valid. Choose either NONE, VIRTUAL, HS_DRIVEN, FREE or REDEPOSIT.";
 			throw UnknownValueException(msg.str(), AT);
 		}
 	}
 	return erosion;
+}
+
+
+/**
+ * @brief Returns the redistribution type as defined in the configuration file, checks for legacy boolean values.
+ * @param cfg SnowpackConfig object
+ * @param prnt_wrn If true, print a warning if legacy ini settings are used. 
+ * @return redistribution type as string
+ * @throws UnknownValueException if the value is not valid
+ * @todo /TODO Ideally we want to throw a warning only once, but this is not implemented yet. Snowpack and SnowDrift objects should not be initialized every timestep!
+ */
+std::string get_redistribution(const SnowpackConfig& cfg, const bool prnt_wrn)
+{
+	std::string redist = "NONE";
+	cfg.getValue("SNOW_REDISTRIBUTION", "SnowpackAdvanced", redist);
+	std::transform(redist.begin(), redist.end(), redist.begin(), ::toupper);	// Force upper case
+	std::stringstream msg;
+	
+	// First check if there are enough slopes to redistribute snow
+	const int nSlopes = cfg.get("NUMBER_SLOPES", "SnowpackAdvanced");
+	if (nSlopes<2) { //  redistribution is only possible with more than one slope
+		redist = "NONE";
+		msg <<"WARNING: SNOW_REDISTRIBUTION requires at least two slopes (nSlopes>1).";	
+		throw UnknownValueException(msg.str(), AT);
+	}
+	// Check for valid redistribution options, convert legacy boolean values to appropriate strings.
+	if (redist != "NONE" && redist != "SIMPLE" && redist != "ADVANCED") {
+		if (redist == "TRUE") { // SNOW_redistribution==TRUE is deprecated and is now called SIMPLE.
+			redist="SIMPLE";
+			msg <<" SNOW_REDISTRIBUTION=TRUE is deprecated and is now called 'SIMPLE'. Please update .ini settings. (Valid options are 'NONE', 'SIMPLE', 'ADVANCED') ";
+			if (prnt_wrn) {
+				WARN(msg.str() ); // only warn first time. 
+			}
+		} else if (redist == "FALSE") { // SNOW_redist==FALSE is deprecated and now interpreted as NONE.
+			redist="NONE";
+			msg <<" SNOW_REDISTRIBUTION=FALSE is deprecated and is now called 'NONE'. Please update .ini settings. ";		// Valid options are 'NONE', 'HS_DRIVEN', 'VIRTUAL', 'FREE', and 'REDEPOSIT' ";
+			if (prnt_wrn) {
+				WARN(msg.str() ); // only warn first time. (when called from main)
+			}
+
+		} else {
+			msg << "Value provided for SNOW_REDISTRIBUTION (" << redist << ") is not valid. Choose either NONE, SIMPLE or ADVANCED.";
+			throw UnknownValueException(msg.str(), AT);
+		}
+	}
+	return redist;
+}
+
+
+
+void	check_legacy_ini(const SnowpackConfig& cfg)
+{
+	// Check for legacy ini settings, which are not used anymore.
+
+	get_erosion(cfg, true); // print warning if legacy ini settings are used 
+	get_redistribution(cfg, true); // print warning if legacy ini settings are used 
+
 }

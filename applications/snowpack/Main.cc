@@ -105,6 +105,7 @@ static string mode = "RESEARCH";
 static bool restart = false;
 static mio::Date dateBegin, dateEnd;
 static vector<string> vecStationIDs;
+bool msg_deposit = false;  ///Enables deposit notification for debugging (can be removed in the future)
 
 /// @brief Main control parameters
 struct MainControl
@@ -137,7 +138,8 @@ Slope::Slope(const mio::Config& cfg)
 	snow_erosion = get_erosion(cfg); 
 	stringstream ss;
 	ss << nSlopes;
-	cfg.getValue("SNOW_REDISTRIBUTION", "SnowpackAdvanced", snow_redistribution);
+	// cfg.getValue("SNOW_REDISTRIBUTION", "SnowpackAdvanced", snow_redistribution);
+	snow_redistribution = (get_redistribution(cfg)!="NONE") ? true : false; //note that the namelist setting "snow_redistribution" is a string, but WITHIN the slope class, we assign a boolean value.
 	if (snow_redistribution && !(nSlopes > 1 && nSlopes % 2 == 1))
 		throw mio::IOException("Please set NUMBER_SLOPES to 3, 5, 7, or 9 with SNOW_REDISTRIBUTION set! (nSlopes="+ss.str()+")", AT);
 	cfg.getValue("PREVAILING_WIND_DIR", "SnowpackAdvanced", prevailing_wind_dir, mio::IOUtils::nothrow);
@@ -541,6 +543,7 @@ inline void dataForCurrentTimeStep(CurrentMeteo& Mdata, SurfaceFluxes& surfFluxe
 	if (Mdata.tss == mio::IOUtils::nodata) {
 		cfg.addKey("MEAS_TSS", "Snowpack", "false");
 	}
+	const std::string snow_redistribution_val = get_redistribution(cfg); // the string value of the snow redistribution method, to differentiate from the bool value used in the Slope class (although this is no longer used, so the bool can go. )
 
 	// Reset Surface and Canopy Data to zero if you seek current values
 	const bool avgsum_time_series = cfg.get("AVGSUM_TIME_SERIES", "Output");
@@ -578,7 +581,7 @@ inline void dataForCurrentTimeStep(CurrentMeteo& Mdata, SurfaceFluxes& surfFluxe
 		cfg.addKey("MEAS_TSS", "Snowpack", "false");
 		Mdata.tss = Constants::undefined;
 		Mdata.lw_net = Constants::undefined;
-		cfg.addKey("ENFORCE_MEASURED_SNOW_HEIGHTS", "Snowpack", "true");
+		cfg.addKey("ENFORCE_MEASURED_SNOW_HEIGHTS", "Snowpack", "true"); /// WHY??? make a dedicated key if you want sth new. There is no such thing on a vslope!
 		cfg.addKey("DETECT_GRASS", "SnowpackAdvanced", "false");
 	}
 
@@ -630,19 +633,40 @@ inline void dataForCurrentTimeStep(CurrentMeteo& Mdata, SurfaceFluxes& surfFluxe
 		}
 		/*
 		 * Snow redistribution on slopes: Add windward eroded snow to lee slope
-		 * These are very important lines: Note that deposition is treated here (lee)
-		 * while erosion is treated in SnowDrift.c (windward).
+		 * These are very important lines: Note that deposition is treated here (lee) while erosion is treated in SnowDrift.cc (windward).
+		 * The 'original' snow redistribution scheme is now called SIMPLE (previously TRUE)
+		 * The ADVANCED scheme uses Snowpack::RedepositSnow to modify density based on wind speed, TA and (optionally) RH, depending on the choice for DENSITY_REDEPOSIT
 		*/
-		if (slope.snow_redistribution && (slope.sector == slope.lee)) {
-			// If it is not snowing, use surface snow density on windward slope
-			if (!(hn_slope > 0.)) {
+		if ((snow_redistribution_val == "SIMPLE" ) && (slope.sector == slope.lee)) {
+			if (!(hn_slope > 0.)) {// If it is not snowing, use surface snow density on windward slope
 				rho_hn_slope = vecXdata[slope.luv].rho_hn;
 			}
-			// Add eroded mass from windward slope
-			if (rho_hn_slope != 0.) {
+			if (rho_hn_slope != 0.) {// Add eroded mass from windward slope
 				hn_slope += vecXdata[slope.luv].ErosionMass / rho_hn_slope;
 			}
 			vecXdata[slope.luv].ErosionMass = 0.;
+		}else if ((snow_redistribution_val == "ADVANCED") && (slope.sector == slope.lee)) {
+			// Add eroded mass from windward slope to lee slope using the Redeposit scheme:
+			if (vecXdata[slope.luv].ErosionMass > 0.) {
+				if ( msg_deposit) { //messages for debug
+						prn_msg(__FILE__, __LINE__, "msg+", Mdata.date, "Depositing total mass %.3lf kg/m2 ( slope=%d)", vecXdata[slope.luv].ErosionMass, slope.sector);
+					}
+				int El_bfr = vecXdata[slope.sector].getNumberOfElements();
+				const string density_redeposit = cfg.get("DENSITY_REDEPOSIT", "SnowpackAdvanced");
+				
+				Snowpack snowpack(cfg); // HACK: create a separate snowpack object to access the Redeposit and compSnowfall functions
+				snowpack.RedepositSnow(Mdata, vecXdata[slope.sector], surfFluxes, vecXdata[slope.luv].ErosionMass, density_redeposit);
+				
+				// has snow actually been deposited??
+				if ( msg_deposit) {
+					if ( vecXdata[slope.sector].getNumberOfElements() != El_bfr ) {
+							prn_msg(__FILE__, __LINE__, "msg+", Mdata.date, "deposited %d elements,  %.4lf m, rho=%.3lf kg/m3" ,
+								 (vecXdata[slope.sector].getNumberOfElements()-El_bfr), vecXdata[slope.sector].hn_redeposit, vecXdata[slope.sector].rho_hn_redeposit );
+						}
+					}	
+				// snow has been deposited, and ErosionMass is now zero
+				vecXdata[slope.luv].ErosionMass = 0.;
+			}
 		}
 		// Update depth of snowfall on slopes.
 		// This may include contributions from drifting snow eroded on the windward (luv) slope.
@@ -1072,6 +1096,8 @@ inline void real_main (int argc, char *argv[])
 			cfg.addKey(ss.str(), "Input", vecStationIDs[i_stn]);
 		}
 	}
+
+	check_legacy_ini(cfg); // check legacy ini files for deprecated keys, and print warnings.
 
 	SnowpackIO snowpackio(cfg);
 	mio::IOManager io(cfg);
