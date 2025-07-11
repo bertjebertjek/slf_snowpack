@@ -146,15 +146,13 @@ class Snowpack {
 		bool research_mode, useCanopyModel, enforce_measured_snow_heights, detect_grass;
 		bool soil_flux, useSoilLayers;
 		bool coupled_phase_changes;
-		bool combine_elements, reduce_n_elements;
-		bool change_bc, meas_tss;
+		bool combine_elements, reduce_n_elements, force_add_snowfall, change_bc, meas_tss;
 		bool vw_dendricity;
 		bool enhanced_wind_slab; ///< to use an even stronger wind slab densification than implemented by default
 		std::string snow_erosion; // erosion of snow: NONE, HS_DRIVEN, FREE, VIRTUAL or REDEPOSIT
 		bool snow_redistribution; // redistribution of snow from windward (luv) slope to leeward slope
 		bool alpine3d; ///< triggers various tricks for Alpine3D (including reducing the number of warnings)
 		bool ageAlbedo; ///< use the age of snow in the albedo parametrizations? default: true
-		bool force_add_snowfall; // to force snowfall in case of small amounts. Used in redepositSnow
 		const static double min_allowed_sn_dt; ///< minimum allowed snowpack time step for solving the heat equation
 		const static bool hydrometeor;
 		const static double snowfall_warning;
