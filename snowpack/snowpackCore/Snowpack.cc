@@ -2103,6 +2103,15 @@ void Snowpack::runSnowpackModel(CurrentMeteo& Mdata, SnowStation& Xdata, double&
 			}
 		}
 
+		///////////////////////////////////////////////////////////////
+		// ToDo:  Make Xdata.RedistributionMass to bring snow to slope. 
+		///////////////////////////////////////////////////////////////
+		// If there is DEPOSITING of luv-eroded snow from on the lee slope, we hand this over to the RedepositSnow function via Mdata.snowdrift.:
+        if (Xdata.RedistributionMass > 0. && snow_redistribution == "ADVANCED") { 
+            RedepositSnow(Mdata, Xdata, Sdata, Xdata.RedistributionMass, density_redeposit);
+            Xdata.RedistributionMass = 0.;
+        }
+
 		// If it is SNOWING, find out how much, prepare for new FEM data. If raining, cumu_precip is set back to 0
 		compSnowFall(Mdata, Xdata, cumu_precip, Sdata);
 

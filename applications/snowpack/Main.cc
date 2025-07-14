@@ -105,7 +105,6 @@ static string mode = "RESEARCH";
 static bool restart = false;
 static mio::Date dateBegin, dateEnd;
 static vector<string> vecStationIDs;
-bool msg_deposit = false;  ///Enables deposit notification for debugging (can be removed in the future)
 
 /// @brief Main control parameters
 struct MainControl
@@ -640,25 +639,10 @@ inline void dataForCurrentTimeStep(CurrentMeteo& Mdata, SurfaceFluxes& surfFluxe
 			}
 			vecXdata[slope.luv].ErosionMass = 0.;
 		}else if ((snow_redistribution == "ADVANCED") && (slope.sector == slope.lee)) {
-			// Add eroded mass from windward slope to lee slope using the Redeposit scheme:
+			// Transfer eroded mass from windward slope to lee slope Xdata object, so we can deposit it later in realMain->runSnowpackModel() using the Redeposit scheme:
 			if (vecXdata[slope.luv].ErosionMass > 0.) {
-				if ( msg_deposit) { //messages for debug
-						prn_msg(__FILE__, __LINE__, "msg+", Mdata.date, "Depositing total mass %.3lf kg/m2 ( slope=%d)", vecXdata[slope.luv].ErosionMass, slope.sector);
-					}
-				int El_bfr = vecXdata[slope.sector].getNumberOfElements();
-				const string density_redeposit = cfg.get("DENSITY_REDEPOSIT", "SnowpackAdvanced");
-				
-				Snowpack snowpack(cfg); // HACK: create a separate snowpack object to access the Redeposit and compSnowfall functions
-				snowpack.RedepositSnow(Mdata, vecXdata[slope.sector], surfFluxes, vecXdata[slope.luv].ErosionMass, density_redeposit);
-				
-				// has snow actually been deposited??
-				if ( msg_deposit) {
-					if ( vecXdata[slope.sector].getNumberOfElements() != El_bfr ) {
-							prn_msg(__FILE__, __LINE__, "msg+", Mdata.date, "deposited %d elements,  %.4lf m, rho=%.3lf kg/m3" ,
-								 (vecXdata[slope.sector].getNumberOfElements()-El_bfr), vecXdata[slope.sector].hn_redeposit, vecXdata[slope.sector].rho_hn_redeposit );
-						}
-					}	
-				// snow has been deposited, and ErosionMass is now zero
+				// Hand over the luv eroded mass to the lee sector. set ErosionMass back to zero
+				vecXdata[slope.sector].RedistributionMass = vecXdata[slope.luv].ErosionMass;
 				vecXdata[slope.luv].ErosionMass = 0.;
 			}
 		}

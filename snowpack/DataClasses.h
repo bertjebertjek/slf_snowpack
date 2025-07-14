@@ -665,13 +665,14 @@ class SnowStation {
 		double swc_sum_soil;        ///< Total solid water in soil
 		double hn;                  ///< Depth of new snow to be used on slopes
 		double rho_hn;              ///< Density of new snow to be used on slopes
-		double rime_hn;              ///< rime of new snow to be used on slopes
+		double rime_hn;             ///< rime of new snow to be used on slopes
 		double hn_redeposit;        ///< Depth of redeposited snow (REDEPOSIT mode)
 		double rho_hn_redeposit;    ///< Density of redeposited snow (REDEPOSIT mode)
 		size_t ErosionLevel;        ///< Element where snow erosion stopped previously for the drift index
 		double ErosionMass;         ///< Eroded mass either real or virtually (storage if less than one element)
-		char S_class1;               ///< Stability class based on hand hardness, grain class ...
-		char S_class2;               ///< Stability class based on hand hardness, grain class ...
+		double RedistributionMass;  ///< Mass redistributed from luv to lee slope when snow_redistribution==ADVANCED
+		char S_class1;              ///< Stability class based on hand hardness, grain class ...
+		char S_class2;              ///< Stability class based on hand hardness, grain class ...
 		double S_d;                 ///< Minimum deformation rate stability index
 		double z_S_d;               ///< Depth of Minimum S_d
 		double S_n;                 ///< Minimum natural stability index
