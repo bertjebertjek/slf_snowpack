@@ -581,7 +581,7 @@ inline void dataForCurrentTimeStep(CurrentMeteo& Mdata, SurfaceFluxes& surfFluxe
 		cfg.addKey("MEAS_TSS", "Snowpack", "false");
 		Mdata.tss = Constants::undefined;
 		Mdata.lw_net = Constants::undefined;
-		cfg.addKey("ENFORCE_MEASURED_SNOW_HEIGHTS", "Snowpack", "true"); /// WHY??? make a dedicated key if you want sth new. There is no such thing on a vslope!
+		cfg.addKey("ENFORCE_MEASURED_SNOW_HEIGHTS", "Snowpack", "true");
 		cfg.addKey("DETECT_GRASS", "SnowpackAdvanced", "false");
 	}
 

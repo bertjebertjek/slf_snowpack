@@ -117,9 +117,10 @@ https://snowpack.slf.ch
 	<!--Parameter group for virtual slopes -->
 	<parametergroup name="SP_VIRTUAL_SLOPES_OPTION">
 		<parameter key="SNOW_REDISTRIBUTION" type="alternative">
-			<option value="TRUE"/>
-			<option value="FALSE"/>
-			<help>Specifies if redistribution of snow is allowed from windward (luv) to lee slopes. The snow erosion on virtual slopes will contribute to the drifting snow index (default: FALSE).</help>
+			<option value="NONE"/>
+			<option value="SIMPLE"/>
+			<option value="ADVANCED"/>
+			<help>Specifies if redistribution of snow is allowed from windward (luv) to lee slopes. The snow erosion on the (luv) virtual slope will contribute to the drifting snow index (default: NONE). SIMPLE: eroded snow maintains the original density from the luv side when deposited. ADVANCED: density of deposited snow is affected by wind speed and temperature, according to the paramterization selected under DENSITY_REDEPOSIT. See also SNOW_EROSION.</help>
 		</parameter>
 		<parameter key="PREVAILING_WIND_DIR" type="number" format="integer+" min="0" max="360" wrap="true" notoggle="true" unit="°">
 			<help>Shifts the origin of the wind rose for snow redistribution and slope simulations: e.g. choose 45° to have NE/SE/SW/NW (default: 0)</help>
