@@ -1598,7 +1598,8 @@ void Snowpack::compTechnicalSnow(const CurrentMeteo& Mdata, SnowStation& Xdata, 
 /**
  * @brief Determines whether new snow elements are added on top of the snowpack
  * - If enforce_measured_snow_heights=0 (research mode), the new snow height corresponding to the cumulated
- *   new snow water equivalent cumu_precip must be greater than HEIGHT_NEW_ELEM to allow adding elements.
+ *   new snow water equivalent cumu_precip must be greater than HEIGHT_NEW_ELEM to allow adding elements, 
+ * 	 unless force_add_snowfall is true (which is the case for redepositSnow - to allow for small amounts of wind deposition).
  * - In case of virtual slopes, uses new snow depth and density from either flat field or luv slope
  * - The first thing is to compute the height of each element in the snow layer. For now,
  *   instead of trying to find an optimal number of elements, we will define the number of new
