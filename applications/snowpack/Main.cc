@@ -71,7 +71,7 @@ class Slope {
 		bool north, south;
 		std::string snow_erosion;
 		bool mainStationDriftIndex;
-		bool snow_redistribution, luvDriftIndex;
+		bool luvDriftIndex;
 
 		unsigned int getSectorDir(const double& dir_or_expo) const;
 		void setSlope(const unsigned int slope_sequence, vector<SnowStation>& vecXdata, double& wind_dir);
@@ -131,17 +131,11 @@ Slope::Slope(const mio::Config& cfg)
          first(1), luv(0), lee(0),
          north(false), south(false),
          snow_erosion("NONE"), mainStationDriftIndex(false),
-         snow_redistribution(false), luvDriftIndex(false),
+         luvDriftIndex(false),
          sector_width(0)
 {
 	cfg.getValue("NUMBER_SLOPES", "SnowpackAdvanced", nSlopes);
-	snow_erosion = get_erosion(cfg); 
-	stringstream ss;
-	ss << nSlopes;
-	// cfg.getValue("SNOW_REDISTRIBUTION", "SnowpackAdvanced", snow_redistribution);
-	snow_redistribution = (get_redistribution(cfg)!="NONE") ? true : false; //note that the namelist setting "snow_redistribution" is a string, but WITHIN the slope class, we assign a boolean value.
-	if (snow_redistribution && !(nSlopes > 1 && nSlopes % 2 == 1))
-		throw mio::IOException("Please set NUMBER_SLOPES to 3, 5, 7, or 9 with SNOW_REDISTRIBUTION set! (nSlopes="+ss.str()+")", AT);
+	snow_erosion = get_erosion(cfg); // Not convinced this should be stored in the Slope object, but ok. 
 	cfg.getValue("PREVAILING_WIND_DIR", "SnowpackAdvanced", prevailing_wind_dir, mio::IOUtils::nothrow);
 	sector_width = 360. / static_cast<double>(std::max((unsigned)1, nSlopes-1));
 }
@@ -543,7 +537,7 @@ inline void dataForCurrentTimeStep(CurrentMeteo& Mdata, SurfaceFluxes& surfFluxe
 	if (Mdata.tss == mio::IOUtils::nodata) {
 		cfg.addKey("MEAS_TSS", "Snowpack", "false");
 	}
-	const std::string snow_redistribution_val = get_redistribution(cfg); // the string value of the snow redistribution method, to differentiate from the bool value used in the Slope class (although this is no longer used, so the bool can go. )
+	const std::string snow_redistribution = get_redistribution(cfg);
 
 	// Reset Surface and Canopy Data to zero if you seek current values
 	const bool avgsum_time_series = cfg.get("AVGSUM_TIME_SERIES", "Output");
@@ -637,7 +631,7 @@ inline void dataForCurrentTimeStep(CurrentMeteo& Mdata, SurfaceFluxes& surfFluxe
 		 * The 'original' snow redistribution scheme is now called SIMPLE (previously TRUE)
 		 * The ADVANCED scheme uses Snowpack::RedepositSnow to modify density based on wind speed, TA and (optionally) RH, depending on the choice for DENSITY_REDEPOSIT
 		*/
-		if ((snow_redistribution_val == "SIMPLE" ) && (slope.sector == slope.lee)) {
+		if ((snow_redistribution == "SIMPLE" ) && (slope.sector == slope.lee)) {
 			if (!(hn_slope > 0.)) {// If it is not snowing, use surface snow density on windward slope
 				rho_hn_slope = vecXdata[slope.luv].rho_hn;
 			}
@@ -645,7 +639,7 @@ inline void dataForCurrentTimeStep(CurrentMeteo& Mdata, SurfaceFluxes& surfFluxe
 				hn_slope += vecXdata[slope.luv].ErosionMass / rho_hn_slope;
 			}
 			vecXdata[slope.luv].ErosionMass = 0.;
-		}else if ((snow_redistribution_val == "ADVANCED") && (slope.sector == slope.lee)) {
+		}else if ((snow_redistribution == "ADVANCED") && (slope.sector == slope.lee)) {
 			// Add eroded mass from windward slope to lee slope using the Redeposit scheme:
 			if (vecXdata[slope.luv].ErosionMass > 0.) {
 				if ( msg_deposit) { //messages for debug

@@ -650,14 +650,8 @@ std::string get_redistribution(const SnowpackConfig& cfg, const bool prnt_wrn)
 	cfg.getValue("SNOW_REDISTRIBUTION", "SnowpackAdvanced", redist);
 	std::transform(redist.begin(), redist.end(), redist.begin(), ::toupper);	// Force upper case
 	std::stringstream msg;
+
 	
-	// First check if there are enough slopes to redistribute snow
-	const int nSlopes = cfg.get("NUMBER_SLOPES", "SnowpackAdvanced");
-	if (nSlopes<2) { //  redistribution is only possible with more than one slope
-		redist = "NONE";
-		msg <<"WARNING: SNOW_REDISTRIBUTION requires at least two slopes (nSlopes>1).";	
-		throw UnknownValueException(msg.str(), AT);
-	}
 	// Check for valid redistribution options, convert legacy boolean values to appropriate strings.
 	if (redist != "NONE" && redist != "SIMPLE" && redist != "ADVANCED") {
 		if (redist == "TRUE") { // SNOW_redistribution==TRUE is deprecated and is now called SIMPLE.
@@ -678,6 +672,23 @@ std::string get_redistribution(const SnowpackConfig& cfg, const bool prnt_wrn)
 			throw UnknownValueException(msg.str(), AT);
 		}
 	}
+	
+	// finally check if the number of slopes is valid for redistribution
+	const int nSlopes = cfg.get("NUMBER_SLOPES", "SnowpackAdvanced");
+	stringstream ss;
+	ss << nSlopes;
+	if ((redist!="NONE") && !(nSlopes > 1 && nSlopes % 2 == 1))
+		throw mio::IOException("Please set NUMBER_SLOPES to 3, 5, 7, or 9 with SNOW_REDISTRIBUTION set! (nSlopes="+ss.str()+")", AT);
+		
+	
+	// First check if there are enough slopes to redistribute snow
+	// if (nSlopes<2) { //  redistribution is only possible with more than one slope
+	// 	redist = "NONE";
+	// 	msg <<"WARNING: SNOW_REDISTRIBUTION requires at least two slopes (nSlopes>1).";	
+	// 	// throw UnknownValueException(msg.str(), AT);
+	// 	throw mio::IOException(msg.str(), AT);
+	// }
+		
 	return redist;
 }
 
