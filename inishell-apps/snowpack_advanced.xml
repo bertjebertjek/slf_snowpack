@@ -82,6 +82,9 @@ https://snowpack.slf.ch
 			 - VIRTUAL: snow is not actually eroded, but erosion is calculated. Careful when combining with SNOW_REDISTRIBUTION, in which case the virtually eroded mass IS added to the lee slope.	
 			</help>
 		</parameter>
+		<parameter key="EROSION_LIMIT" type="number" format="decimal" precision="2" unit="kg/m³">
+			<help>A hard limit to snow erosion. Snow layers with a density above this value are not eroded. (default: undefined)</help>
+		</parameter>
 		<parameter key="WIND_SCALING_FACTOR" type="number" format="decimal" precision="1" min="0" max="2" longlabel="true">
 			<help>Scaling factor to apply to wind values causing drifting snow because some stations consistently measure a wind that is too low (this should be computed from statistical analysis). (default: 1.0)</help>
 		</parameter>

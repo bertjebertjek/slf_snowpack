@@ -92,6 +92,8 @@ std::string get_redistribution(const SnowpackConfig& cfg,  const bool prnt_wrn =
 
 void check_legacy_ini(const SnowpackConfig& cfg);
 
+double get_erosion_limit(const SnowpackConfig& cfg);
+
 class Warning {
 public:
     Warning(const std::string& msg, const std::string& file, int line) {

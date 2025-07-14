@@ -679,19 +679,9 @@ std::string get_redistribution(const SnowpackConfig& cfg, const bool prnt_wrn)
 	ss << nSlopes;
 	if ((redist!="NONE") && !(nSlopes > 1 && nSlopes % 2 == 1))
 		throw mio::IOException("Please set NUMBER_SLOPES to 3, 5, 7, or 9 with SNOW_REDISTRIBUTION set! (nSlopes="+ss.str()+")", AT);
-		
-	
-	// First check if there are enough slopes to redistribute snow
-	// if (nSlopes<2) { //  redistribution is only possible with more than one slope
-	// 	redist = "NONE";
-	// 	msg <<"WARNING: SNOW_REDISTRIBUTION requires at least two slopes (nSlopes>1).";	
-	// 	// throw UnknownValueException(msg.str(), AT);
-	// 	throw mio::IOException(msg.str(), AT);
-	// }
-		
+				
 	return redist;
 }
-
 
 
 void	check_legacy_ini(const SnowpackConfig& cfg)
@@ -700,5 +690,16 @@ void	check_legacy_ini(const SnowpackConfig& cfg)
 
 	get_erosion(cfg, true); // print warning if legacy ini settings are used 
 	get_redistribution(cfg, true); // print warning if legacy ini settings are used 
+}
 
+/**
+ * @brief Set a hard limit for erosion. Snow layer with a density above this limit will not be eroded. Used in SnowDift::CompSnowDrift().
+ * @param cfg SnowpackConfig object
+ * @return limit in kg m-3
+ */
+double get_erosion_limit(const SnowpackConfig& cfg)
+{
+	double tmp_erosion_limit = Constants::undefined;
+	cfg.getValue("SNOW_EROSION_LIMIT", "SnowpackAdvanced", tmp_erosion_limit, IOUtils::nothrow);
+	return tmp_erosion_limit;
 }

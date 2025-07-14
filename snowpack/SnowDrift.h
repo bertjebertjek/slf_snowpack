@@ -50,6 +50,7 @@ class SnowDrift {
 		const Saltation saltation; // The saltation model used
 		const bool enforce_measured_snow_heights; // Will be read from cfg object
 		std::string snow_erosion, snow_redistribution;
+		double erosion_limit; // Erosion limit in kg m-2, read from cfg object. Density above this is not eroded;
 		const bool alpine3d; ///< triggers various tricks for Alpine3D (including reducing the number of warnings)
 		const double sn_dt;        //Calculation time step in seconds as derived from CALCULATION_STEP_LENGTH
 		static const bool msg_erosion;

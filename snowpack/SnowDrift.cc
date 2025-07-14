@@ -52,20 +52,6 @@ static bool get_bool(const SnowpackConfig& cfg, const std::string& key, const st
 	return value;
 }
 
-// static bool get_redistribution(const SnowpackConfig& cfg)
-// {
-// 	bool redistribution = false;
-// 	const int nSlopes = cfg.get("NUMBER_SLOPES", "SnowpackAdvanced");
-
-// 	// Defines whether real snow erosion at main station or/and redistribution on virtual slopes (default in operational mode)
-// 	// should happen under blowing snow conditions.
-// 	//cfg.getValue("SNOW_EROSION", "SnowpackAdvanced", snow_erosion);
-// 	if (nSlopes>1)
-// 		cfg.getValue("SNOW_REDISTRIBUTION", "SnowpackAdvanced", redistribution);
-	
-// 	return redistribution;
-// }
-
 static double get_sn_dt(const SnowpackConfig& cfg) 
 {
 	//Calculation time step in seconds as derived from CALCULATION_STEP_LENGTH
@@ -76,7 +62,7 @@ static double get_sn_dt(const SnowpackConfig& cfg)
 SnowDrift::SnowDrift(const SnowpackConfig& cfg) : saltation(cfg),
                      enforce_measured_snow_heights( get_bool(cfg, "ENFORCE_MEASURED_SNOW_HEIGHTS", "Snowpack") ), snow_redistribution( get_redistribution(cfg) ), 
 					 snow_erosion( get_erosion(cfg) ), alpine3d( get_bool(cfg, "ALPINE3D", "SnowpackAdvanced") ),
-                     sn_dt( get_sn_dt(cfg) ) {}
+                     sn_dt( get_sn_dt(cfg)), erosion_limit( get_erosion_limit(cfg) )  {}
 
 /**
  * @brief Computes the local mass flux of snow
@@ -197,6 +183,10 @@ void SnowDrift::compSnowDrift(const CurrentMeteo& Mdata, SnowStation& Xdata, Sur
 		// *******************************************************************
 		// Now erode the calculated mass from the top of the snowpack
 		unsigned int nErode=0; // number of eroded elements
+		// Check for limits to halt erosion. (t1au_thresh should limit erosion, but does a poor job. This allows for a hard rho value to halt erosion.) 
+		if (erosion_limit != Constants::undefined && erosion_limit != 0.) {
+			if (EMS[nE-1].Rho > erosion_limit) return;
+		}
 		if (massErode >= 0.95 * EMS[nE-1].M) {
 			// Erode at most one element with a maximal error of +- 5 % on mass ...
 			if ((snow_redistribution=="SIMPLE") && Xdata.windward) // in case of SIMPLE redistribution, use original density for deposition on virtual lee slope
