@@ -2103,10 +2103,8 @@ void Snowpack::runSnowpackModel(CurrentMeteo& Mdata, SnowStation& Xdata, double&
 			}
 		}
 
-		///////////////////////////////////////////////////////////////
-		// ToDo:  Make Xdata.RedistributionMass to bring snow to slope. 
-		///////////////////////////////////////////////////////////////
-		// If there is DEPOSITING of luv-eroded snow from on the lee slope, we hand this over to the RedepositSnow function via Mdata.snowdrift.:
+		// If there is luv-eroded snow available to be deposited on the lee slope, we do so with the RedepositSnow function. 
+		//  (Note that SIMPLE redistribution is handled in Main.cc->dataForCurrentTimeStep)
         if (Xdata.RedistributionMass > 0. && snow_redistribution == "ADVANCED") { 
             RedepositSnow(Mdata, Xdata, Sdata, Xdata.RedistributionMass, density_redeposit);
             Xdata.RedistributionMass = 0.;
@@ -2125,7 +2123,7 @@ void Snowpack::runSnowpackModel(CurrentMeteo& Mdata, SnowStation& Xdata, double&
 			// Redeposit eroded snow on same slope in case of snow_erosion=REDEPOSIT: 
 			if (snow_erosion == "REDEPOSIT" && Xdata.ErosionMass > 0. ) {
 				if ((snow_redistribution!="NONE") && !Xdata.windward && !Xdata.leeward) {
-					// Redeposit snow if slope is 1) Main Station 2) not luv 3) not lee (lee deposition is handled by snow_redistribution in Main.cc)
+					// Redeposit snow if slope is 1) Main Station 2) not luv 3) not lee (lee deposition is handled by snow_redistribution in Main.cc and above)
 					RedepositSnow(Mdata, Xdata, Sdata, Xdata.ErosionMass, density_redeposit);
 				}else if (snow_redistribution=="NONE")	{ // if snow_redistribution is not set, we redeposit snow on all slopes.
 					RedepositSnow(Mdata, Xdata, Sdata, Xdata.ErosionMass, density_redeposit);

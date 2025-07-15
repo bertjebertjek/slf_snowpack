@@ -639,7 +639,7 @@ inline void dataForCurrentTimeStep(CurrentMeteo& Mdata, SurfaceFluxes& surfFluxe
 			}
 			vecXdata[slope.luv].ErosionMass = 0.;
 		}else if ((snow_redistribution == "ADVANCED") && (slope.sector == slope.lee)) {
-			// Transfer eroded mass from windward slope to lee slope Xdata object, so we can deposit it later in realMain->runSnowpackModel() using the Redeposit scheme:
+			// Transfer eroded mass from windward slope to lee slope's Xdata object, so we can deposit it later in realMain->runSnowpackModel():
 			if (vecXdata[slope.luv].ErosionMass > 0.) {
 				// Hand over the luv eroded mass to the lee sector. set ErosionMass back to zero
 				vecXdata[slope.sector].RedistributionMass = vecXdata[slope.luv].ErosionMass;
