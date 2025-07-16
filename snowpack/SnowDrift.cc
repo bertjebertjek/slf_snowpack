@@ -60,9 +60,9 @@ static double get_sn_dt(const SnowpackConfig& cfg)
 }
 
 SnowDrift::SnowDrift(const SnowpackConfig& cfg) : saltation(cfg),
-                     enforce_measured_snow_heights( get_bool(cfg, "ENFORCE_MEASURED_SNOW_HEIGHTS", "Snowpack") ), snow_redistribution( get_redistribution(cfg) ), 
-					 snow_erosion( get_erosion(cfg) ), alpine3d( get_bool(cfg, "ALPINE3D", "SnowpackAdvanced") ),
-                     sn_dt( get_sn_dt(cfg)), erosion_limit( get_erosion_limit(cfg) )  {}
+                     enforce_measured_snow_heights( get_bool(cfg, "ENFORCE_MEASURED_SNOW_HEIGHTS", "Snowpack") ), snow_erosion( get_erosion(cfg) ),
+                     snow_redistribution( get_redistribution(cfg) ), erosion_limit( get_erosion_limit(cfg) ), alpine3d( get_bool(cfg, "ALPINE3D", "SnowpackAdvanced") ),
+                     sn_dt( get_sn_dt(cfg))  {}
 
 /**
  * @brief Computes the local mass flux of snow
