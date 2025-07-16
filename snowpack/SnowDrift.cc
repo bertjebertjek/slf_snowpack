@@ -106,6 +106,139 @@ double SnowDrift::compMassFlux(const ElementData& Edata, const double& ustar, co
 	return (Qsalt + Qsusp);
 }
 
+
+/**
+ * @brief Erodes Elements from the top and computes the associated mass flux
+ * Even so the code is quite obscure, it should cover all of the following cases:
+ * -# Externally provided eroded mass (for example, by Alpine3D); see parameter forced_massErode
+ * -# SNOW_REDISTRIBUTION is true: using vw_drift to erode the snow surface on the windward virtual slope
+ * -# SNOW_EROSION is true: using vw to erode the snow surface at the main station (flat field or slope).
+ * -# SNOW_EROSION is true and SNOW_REDISTRIBUTION is false: using vw_drift (if available and larger than vw)
+             to do virtual erosion either on flat field (#slopes == 1) or on windward slope (#slopes > 1).
+ * 	@note However, erosion will also be controlled by mH and thus a measured snow depth (HS1) is required
+ * 	@note If either measured snow depth is missing or the conditions for a real erosion are not fulfilled,
+ *          the possibility of a virtual erosion will be considered using the ErosionLevel marker (virtual erodible layer).
+ * @param Mdata
+ * @param Xdata
+ * @param Sdata
+ * @param forced_massErode if greater than 0, force the eroded mass to the given value (instead of computing it)
+*/
+void SnowDrift::compSnowDrift_deprecated(const CurrentMeteo& Mdata, SnowStation& Xdata, SurfaceFluxes& Sdata, double& forced_massErode) const
+{
+	size_t nE = Xdata.getNumberOfElements();
+	vector<NodeData>& NDS = Xdata.Ndata;
+	vector<ElementData>& EMS = Xdata.Edata;
+
+	const bool no_snow = ((nE < Xdata.SoilNode+1) || (EMS[nE-1].theta[SOIL] > 0.));
+	const bool no_wind_data = (Mdata.vw_drift == mio::IOUtils::nodata);
+	if (no_snow || no_wind_data) {
+		Xdata.ErosionMass = 0.;
+		if (no_snow) {
+			Xdata.ErosionLevel = Xdata.SoilNode;
+			Sdata.drift = 0.;
+		} else
+			Sdata.drift = Constants::undefined;
+		return;
+	}
+
+	// Real erosion either on windward virtual slope, from Alpine3D, or at main station.
+	// At main station, measured snow depth controls whether erosion is possible or not if measured snow depth is provided
+	const bool windward = !alpine3d && (snow_redistribution == "TRUE") && Xdata.windward; // check for windward virtual slope
+	const bool erosion = (snow_erosion == "TRUE") && (Xdata.mH > (Xdata.Ground + Constants::eps)) && ((Xdata.mH + 0.02) < Xdata.cH);
+	const double ustar_max = (Mdata.vw>0.1) ? Mdata.ustar * Mdata.vw_drift / Mdata.vw : 0.; // Scale Mdata.ustar
+
+	if (windward || alpine3d || erosion) {
+		double massErode=0.; // Mass loss due to erosion
+		if (fabs(forced_massErode) > Constants::eps2) {
+			massErode = std::max(0., -forced_massErode); //negative mass is erosion
+		} else {
+			try {
+				if (enforce_measured_snow_heights && !windward)
+					Sdata.drift = compMassFlux(EMS[nE-1], Mdata.ustar, Xdata.meta.getSlopeAngle()); // kg m-1 s-1, erosion at main station, local vw && nE-1
+				else
+					Sdata.drift = compMassFlux(EMS[nE-1], ustar_max, Xdata.meta.getSlopeAngle()); // kg m-1 s-1, windward slope && vw_drift && nE-1
+			} catch(const exception&) {
+					prn_msg(__FILE__, __LINE__, "err", Mdata.date, "Cannot compute mass flux of drifting snow!");
+					throw;
+			}
+			massErode = Sdata.drift * sn_dt / Hazard::typical_slope_length; // Convert to eroded snow mass in kg m-2
+		}
+		unsigned int nErode=0; // number of eroded elements
+		if (massErode >= 0.95 * EMS[nE-1].M) {
+			// Erode at most one element with a maximal error of +- 5 % on mass ...
+			if (windward)
+				Xdata.rho_hn = EMS[nE-1].Rho;
+			nE--;
+			Xdata.cH -= EMS[nE].L;
+			NDS[nE].hoar = 0.;
+			Xdata.ErosionMass = EMS[nE].M;
+			Xdata.ErosionLevel = std::min(nE-1, Xdata.ErosionLevel);
+			nErode++;
+			massErode -= EMS[nE].M;
+			forced_massErode = -massErode;
+		} else if (massErode > Constants::eps) { // ... or take away massErode from top element - partial real erosion
+			if (fabs(EMS[nE-1].L * EMS[nE-1].Rho - EMS[nE-1].M) > 0.001) {
+				prn_msg(__FILE__, __LINE__, "wrn", Mdata.date, "Inconsistent Mass:%lf   L*Rho:%lf", EMS[nE-1].M,EMS[nE-1].L*EMS[nE-1].Rho);
+				EMS[nE-1].M = EMS[nE-1].L * EMS[nE-1].Rho;
+				assert(EMS[nE-1].M>=0.); //mass must be positive
+			}
+			if (windward)
+				Xdata.rho_hn = EMS[nE-1].Rho; // Density of drifting snow on virtual luv slope
+			const double dL = -massErode / (EMS[nE-1].Rho);
+			NDS[nE].z += dL;
+			EMS[nE-1].L0 = EMS[nE-1].L = EMS[nE-1].L + dL;
+			Xdata.cH += dL;
+			NDS[nE].z += NDS[nE].u;
+			NDS[nE].u = 0.0;
+			NDS[nE].hoar = 0.;
+			EMS[nE-1].M -= massErode;
+			assert(EMS[nE-1].M>=0.); //mass must be positive
+			Xdata.ErosionMass = massErode;
+			forced_massErode = 0.;
+		} else {
+			Xdata.ErosionMass = 0.;
+		}
+		if (nErode > 0)
+			Xdata.resize(nE);
+
+		if (!alpine3d && SnowDrift::msg_erosion) { //messages on demand but not in Alpine3D
+			if (Xdata.ErosionMass > 0.) {
+				if (windward)
+					prn_msg(__FILE__, __LINE__, "msg+", Mdata.date, "Eroding %d layer(s) w/ total mass %.3lf kg/m2 (windward: azi=%.1lf, slope=%.1lf)", nErode, Xdata.ErosionMass, Xdata.meta.getAzimuth(), Xdata.meta.getSlopeAngle());
+				else
+					prn_msg(__FILE__, __LINE__, "msg+", Mdata.date, "Eroding %d layer(s) w/ total mass %.3lf kg/m2 (azi=%.1lf, slope=%.1lf)", nErode, Xdata.ErosionMass, Xdata.meta.getAzimuth(), Xdata.meta.getSlopeAngle());
+			}
+		}
+	// ... or, in case of no real erosion, check whether you can potentially erode at windward station using vw_drift.
+	// This will as of 2023 contribute to the drift index VI24, to accommodate the ALPSolut use case!
+	} else if ((snow_erosion == "TRUE") && (Xdata.ErosionLevel > Xdata.SoilNode) && Xdata.windward) {
+		Sdata.drift = compMassFlux(EMS[Xdata.ErosionLevel], ustar_max, Xdata.meta.getSlopeAngle());  // kg m-1 s-1, main station, local vw && erosion level
+		double virtuallyErodedMass = Sdata.drift * sn_dt / Hazard::typical_slope_length; // Convert to eroded snow mass in kg m-2
+		if (virtuallyErodedMass > Constants::eps) {
+			// Add (negative) value stored in Xdata.ErosionMass
+			if (Xdata.ErosionMass < -Constants::eps)
+				virtuallyErodedMass -= Xdata.ErosionMass;
+			Sdata.mass[SurfaceFluxes::MS_WIND] = std::min(virtuallyErodedMass, EMS[Xdata.ErosionLevel].M); // use MS_WIND to carry virtually eroded mass
+			// Now keep track of mass that either did or did not lead to erosion of full layer
+			if (virtuallyErodedMass > EMS[Xdata.ErosionLevel].M) {
+				virtuallyErodedMass -= EMS[Xdata.ErosionLevel].M;
+				Xdata.ErosionLevel--;
+			}
+			Xdata.ErosionMass = -virtuallyErodedMass;
+			Xdata.ErosionLevel = std::max(Xdata.SoilNode, std::min(Xdata.ErosionLevel, nE-1));
+		} else {
+			Xdata.ErosionMass = 0.;
+		}
+		if (!alpine3d && SnowDrift::msg_erosion) { //messages on demand but not in Alpine3D
+			if (Xdata.ErosionLevel > nE-1)
+				prn_msg(__FILE__, __LINE__, "wrn", Mdata.date, "Virtual erosion: ErosionLevel=%d did get messed up (nE-1=%d)", Xdata.ErosionLevel, nE-1);
+		}
+	} else {
+		Xdata.ErosionMass = 0.;
+	}
+}
+
+
 /**
  * @brief Erodes Elements from the top and computes the associated mass flux
  * Even so the code is quite obscure, it should cover all of the following cases:
@@ -128,6 +261,12 @@ double SnowDrift::compMassFlux(const ElementData& Edata, const double& ustar, co
 */
 void SnowDrift::compSnowDrift(const CurrentMeteo& Mdata, SnowStation& Xdata, SurfaceFluxes& Sdata, double& forced_massErode) const
 {
+	// Supporting the deprecated old snow drift routine, for as long as necessary to verify correct working of new routine.
+	if (snow_erosion == "TRUE" || snow_erosion == "FALSE") {
+		compSnowDrift_deprecated(Mdata, Xdata, Sdata, forced_massErode);
+		return;
+	}
+
 	size_t nE = Xdata.getNumberOfElements();
 	vector<NodeData>& NDS = Xdata.Ndata;
 	vector<ElementData>& EMS = Xdata.Edata;

@@ -616,13 +616,11 @@ std::string get_erosion(const SnowpackConfig& cfg, const bool prnt_wrn)
 	///check for legace values.
 	if (erosion != "NONE" && erosion != "VIRTUAL" && erosion != "HS_DRIVEN" && erosion != "FREE" && erosion != "REDEPOSIT") {
 		if (erosion == "TRUE") { // SNOW_EROSION==TRUE is deprecated and now interpreted as HS_DRIVEN.
-			erosion="HS_DRIVEN";
 			msg <<" SNOW_EROSION=TRUE is deprecated and is now called 'HS_DRIVEN'. Please update .ini settings. (Valid options are 'NONE', 'HS_DRIVEN', 'VIRTUAL', 'FREE', and 'REDEPOSIT') ";
 			if (prnt_wrn) {
 				WARN(msg.str() ); // only warn first time. (when called from main)
 			}
 		} else if (erosion == "FALSE") { // SNOW_EROSION==FALSE is deprecated and now interpreted as NONE.
-			erosion="NONE";
 			msg <<" SNOW_EROSION=FALSE is deprecated and is now called 'NONE'. Please update .ini settings. ";		// Valid options are 'NONE', 'HS_DRIVEN', 'VIRTUAL', 'FREE', and 'REDEPOSIT' ";
 			if (prnt_wrn) {
 				WARN(msg.str() ); // only warn first time. (when called from main)
