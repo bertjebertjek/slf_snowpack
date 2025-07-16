@@ -1155,7 +1155,7 @@ void CaaMLIO::writeCustomSnowSoil(pugi::xml_node& node, const SnowStation& Xdata
 	xmlWriteElement(node,(namespaceSNP+":CanopyBasalArea").c_str(),valueStr,"","");
 	snprintf(valueStr,num_max_len,"%.4f",Xdata.Cdata.throughfall);
 	xmlWriteElement(node,(namespaceSNP+":CanopyDirectThroughfall").c_str(),valueStr,"","");
-	snprintf(valueStr,num_max_len,"%d",static_cast<unsigned int>(Xdata.ErosionLevel));
+	snprintf(valueStr,num_max_len,"%u",static_cast<unsigned int>(Xdata.ErosionLevel));
 	xmlWriteElement(node,(namespaceSNP+":ErosionLevel").c_str(),valueStr,"","");
 	snprintf(valueStr,num_max_len,"%.4f",Xdata.TimeCountDeltaHS);
 	xmlWriteElement(node,(namespaceSNP+":TimeCountDeltaHS").c_str(),valueStr,"","");
@@ -1233,7 +1233,7 @@ void CaaMLIO::writeCustomLayerData(pugi::xml_node& node, const ElementData& Edat
 	xmlWriteElement(node,(namespaceSNP+":dendricity").c_str(),valueStr,"","");
 	snprintf(valueStr,num_max_len,"%.2f",Edata.sp);
 	xmlWriteElement(node,(namespaceSNP+":sphericity").c_str(),valueStr,"","");
-	snprintf(valueStr,num_max_len,"%4u",static_cast<int>(Edata.mk));
+	snprintf(valueStr,num_max_len,"%4u",static_cast<unsigned int>(Edata.mk));
 	xmlWriteElement(node,(namespaceSNP+":marker").c_str(),valueStr,"","");
 	snprintf(valueStr,num_max_len,"%.4f",Ndata.hoar);
 	xmlWriteElement(node,(namespaceSNP+":SurfaceHoarMass").c_str(),valueStr,"uom","kgm-2");
