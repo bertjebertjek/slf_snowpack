@@ -1072,7 +1072,7 @@ double SnLaws::newSnowDensityPara(const std::string& i_hn_model,
 		rho_hn = exp(arg);
 		rho_hn = std::min(max_hn_density, std::max(min_hn_density, rho_hn));
 
-	} else if (i_hn_model == "ZWART") {
+	} else if (i_hn_model == "ZWART") { // see "Significance of new-snow properties for snowcover development" - MSc thesis Costijn Zwart, 2007, https://zenodo.org/records/8138302 
 		VW = std::max(2., VW);
 		RH = 0.8; // ori: std::min(1., RH/100.); see asin(sqrt()) below
 		static const double beta01=3.28, beta1=0.03, beta02=-0.36, beta2=-0.75, beta3=0.3;

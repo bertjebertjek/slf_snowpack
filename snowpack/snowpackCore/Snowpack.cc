@@ -1389,6 +1389,16 @@ void Snowpack::setHydrometeorMicrostructure(const CurrentMeteo& Mdata, const boo
 		} else if ((Mdata.vw > 2.9) && (hn_density_parameterization == "JORDY")){
 			elem.dd = std::max(0.5, std::min(1.0, Optim::pow2(1.87 - 0.04*Mdata.vw)) );
 			elem.sp = new_snow_sp;
+		} else if (vw_dendricity){
+			// Bert Kruyt's heuristic parameterization, loosely based on (Vionnet et al. 2012 and Zwart 2007):
+			elem.dd = 1.05 - 0.85 / (1.0 + std::exp(-0.5 * (Mdata.vw - 5.5)));
+			elem.dd = std::min(elem.dd, 1.0);
+			elem.sp = 0.375 / (1.0 + exp(-0.9*(Mdata.vw-5)) ) + 0.5 ;
+			elem.sp = std::max(elem.sp, 0.5  );
+			
+			// // Crocus wind-dependent sp an dd parameterization (Vionnet et al. 2012): 
+			// elem.dd = std::min( std::max(1.29 - 0.17*Mdata.vw, 0.20), 1  )
+			// elem.sp = std::min( std::max(0.08*Mdata.VW + 0.38, 0.5), 0.9) .
 		}
 	
 		/**** Now set grain size (rg) and bond size (rb) ****/
