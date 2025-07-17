@@ -1377,15 +1377,15 @@ void Snowpack::setHydrometeorMicrostructure(const CurrentMeteo& Mdata, const boo
 		elem.dd = new_snow_dd;
 		elem.sp = new_snow_sp;
 		// Adapt dd and sp for blowing snow
-		if (  	(Mdata.vw > 5.) 
-			&&	( 	(variant == "ANTARCTICA" || variant == "POLAR")
-					|| ((hn_density_parameterization == "BELLAIRE")
-					|| (hn_density_parameterization == "LEHNING_NEW")) )
-			) {
-			elem.dd = new_snow_dd_wind;
-			elem.sp = new_snow_sp_wind;
+		if ( (variant == "ANTARCTICA" || variant == "POLAR")
+			|| (hn_density_parameterization == "BELLAIRE")
+			|| (hn_density_parameterization == "LEHNING_NEW") 
+			) { if (Mdata.vw > 5.) {
+					elem.dd = new_snow_dd_wind;
+					elem.sp = new_snow_sp_wind;
+				}
 		} else if ( 	vw_dendricity 
-					&& 	((hn_density_parameterization == "BELLAIRE") || (hn_density_parameterization == "ZWART"))
+					&& 	((hn_density_parameterization == "BELLAIRE") || (hn_density_parameterization == "ZWART")) // 2x Bellaire, Remove?
 				) {
 			const double vw = std::max(0.05, Mdata.vw);
 			elem.dd = (1. - pow(vw/10., 1.57));
