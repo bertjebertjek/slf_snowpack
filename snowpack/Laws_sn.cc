@@ -1063,8 +1063,8 @@ double SnLaws::newSnowDensityPara(const std::string& i_hn_model,
 			rho_hn = 90. + (rho_hn - 30.)*0.9;
 		} else if (i_hn_model == "JORDY" && VW > 2.9) {
 			//Jordy Hendrikx' new snow density parameterization for strong winds (> 2.9 m s-1) for Lehning/Jordy models
-			static const double alpha=91., beta=-35., gamma=-1.1, delta=49., eta=32.,  phi=4.6;
-			return (alpha + beta*TA + gamma*RH +  delta*VW + eta*TSS + phi*TA*VW);
+			static const double alpha_j=91., beta_j=-35., gamma_j=-1.1, delta_j=49., eta_j=32.,  phi_j=4.6;
+			return (alpha_j + beta_j*TA + gamma_j*RH +  delta_j*VW + eta_j*TSS + phi_j*TA*VW);
 		}
 		rho_hn = std::min(max_hn_density, std::max(min_hn_density, rho_hn));
 
@@ -1076,7 +1076,7 @@ double SnLaws::newSnowDensityPara(const std::string& i_hn_model,
 		rho_hn = exp(arg);
 		rho_hn = std::min(max_hn_density, std::max(min_hn_density, rho_hn));
 
-	} else if (i_hn_model == "ZWART") {
+	} else if (i_hn_model == "ZWART") { // see "Significance of new-snow properties for snowcover development" - MSc thesis Costijn Zwart, 2007, https://zenodo.org/records/8138302 
 		VW = std::max(2., VW);
 		RH = 0.8; // ori: std::min(1., RH/100.); see asin(sqrt()) below
 		static const double beta01=3.28, beta1=0.03, beta02=-0.36, beta2=-0.75, beta3=0.3;

@@ -1372,44 +1372,57 @@ void Snowpack::setHydrometeorMicrostructure(const CurrentMeteo& Mdata, const boo
 		elem.theta[AIR] = 1. - elem.theta[ICE];  // void content
 	} else { // no Graupel
 		elem.mk = Snowpack::new_snow_marker;
-		if ((Mdata.vw > 2.9) && (hn_density_parameterization == "JORDY")) {
+		
+		/**** Set Dendricity (dd) and Sphericity (sp) for new snow: ****/
+		elem.dd = new_snow_dd;
+		elem.sp = new_snow_sp;
+		// Adapt dd and sp for blowing snow
+		if (  	(Mdata.vw > 5.) 
+			&&	( 	(variant == "ANTARCTICA" || variant == "POLAR")
+					|| ((hn_density_parameterization == "BELLAIRE")
+					|| (hn_density_parameterization == "LEHNING_NEW")) )
+			) {
+			elem.dd = new_snow_dd_wind;
+			elem.sp = new_snow_sp_wind;
+		} else if ( 	vw_dendricity 
+					&& 	((hn_density_parameterization == "BELLAIRE") || (hn_density_parameterization == "ZWART"))
+				) {
+			const double vw = std::max(0.05, Mdata.vw);
+			elem.dd = (1. - pow(vw/10., 1.57));
+			elem.dd = std::max(0.2, elem.dd);
+		} else if ((Mdata.vw > 2.9) && (hn_density_parameterization == "JORDY")){
 			elem.dd = std::max(0.5, std::min(1.0, Optim::pow2(1.87 - 0.04*Mdata.vw)) );
 			elem.sp = new_snow_sp;
+		} else if (vw_dendricity){
+			// Bert Kruyt's heuristic parameterization, loosely based on (Vionnet et al. 2012 and Zwart 2007):
+			elem.dd = 1.05 - 0.85 / (1.0 + std::exp(-0.5 * (Mdata.vw - 5.5)));
+			elem.dd = std::min(elem.dd, 1.0);
+			elem.sp = 0.375 / (1.0 + exp(-0.9*(Mdata.vw-5)) ) + 0.5 ;
+			elem.sp = std::max(elem.sp, 0.5  );
+			
+			// // Crocus wind-dependent sp an dd parameterization (Vionnet et al. 2012): 
+			// elem.dd = std::min( std::max(1.29 - 0.17*Mdata.vw, 0.20), 1  )
+			// elem.sp = std::min( std::max(0.08*Mdata.VW + 0.38, 0.5), 0.9) .
+		}
+	
+		/**** Now set grain size (rg) and bond size (rb) ****/
+		if (Snowpack::hydrometeor) { // empirical // (hardcoded (False) ln.53)
+			static const double alpha=1.4, beta=-0.08, gamma=-0.15;
+			static const double delta=-0.02;
+			elem.rg = 0.5*(alpha + beta*TA + gamma*Mdata.vw + delta*TA*Mdata.vw);
+			elem.rb = 0.25*elem.rg;
+		} else if ((Mdata.vw > 2.9) && (hn_density_parameterization == "JORDY")) {
 			static const double alpha = 0.9, beta = 0.015, gamma = -0.0062;
 			static const double delta = -0.117, eta=0.0011, phi=-0.0034;
 			elem.rg = std::min(0.5*new_snow_grain_size, std::max(0.15*new_snow_grain_size,
 				alpha + beta*TA + gamma*RH + delta*Mdata.vw
 				+ eta*RH*Mdata.vw + phi*TA*Mdata.vw));
 			elem.rb = 0.4*elem.rg;
-		} else {  // this should just be the default option, and the other clauses set afterwards?
-			elem.dd = new_snow_dd;
-			elem.sp = new_snow_sp;
-			// Adapt dd and sp for blowing snow
-			if (  	(Mdata.vw > 5.) 
-				&&	( 	(variant == "ANTARCTICA" || variant == "POLAR")
-						|| ((hn_density_parameterization == "BELLAIRE")
-						|| (hn_density_parameterization == "LEHNING_NEW")) )
-				) {
-				elem.dd = new_snow_dd_wind;
-				elem.sp = new_snow_sp_wind;
-			} else if ( 	vw_dendricity 
-						&& 	((hn_density_parameterization == "BELLAIRE") || (hn_density_parameterization == "ZWART"))
-					) {
-				const double vw = std::max(0.05, Mdata.vw);
-				elem.dd = (1. - pow(vw/10., 1.57));
-				elem.dd = std::max(0.2, elem.dd);
-			}
-			if (Snowpack::hydrometeor) { // empirical
-				static const double alpha=1.4, beta=-0.08, gamma=-0.15;
-				static const double delta=-0.02;
-				elem.rg = 0.5*(alpha + beta*TA + gamma*Mdata.vw + delta*TA*Mdata.vw);
-				elem.rb = 0.25*elem.rg;
-			} else {
-				elem.rg = new_snow_grain_size/2.;
-				elem.rb = new_snow_bond_size/2.;
-				if (((Mdata.vw_avg >= SnLaws::event_wind_lowlim) && (Mdata.rh_avg >= rh_lowlim))) {
-					elem.rb = std::min(bond_factor_rh*elem.rb, Metamorphism::max_grain_bond_ratio*elem.rg);
-				}
+		} else {
+			elem.rg = new_snow_grain_size/2.;
+			elem.rb = new_snow_bond_size/2.;
+			if (((Mdata.vw_avg >= SnLaws::event_wind_lowlim) && (Mdata.rh_avg >= rh_lowlim))) {
+				elem.rb = std::min(bond_factor_rh*elem.rb, Metamorphism::max_grain_bond_ratio*elem.rg);
 			}
 		}
 	} // end no Graupel
