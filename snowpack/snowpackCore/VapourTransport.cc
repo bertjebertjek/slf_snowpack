@@ -405,10 +405,12 @@ void VapourTransport::LayerToLayer(const CurrentMeteo& Mdata, SnowStation& Xdata
 			Sdata.mass[SurfaceFluxes::MS_SUBLIMATION] += dTh_ice * Constants::density_ice * EMS[e].L;
 			EMS[e].M += dTh_water * Constants::density_water * EMS[e].L+dTh_ice * Constants::density_ice * EMS[e].L;
 			assert(EMS[e].M >= (-Constants::eps2)); // mass must be positive
-
-			EMS[e].Qmm += (dTh_water * Constants::density_water * Constants::lh_vaporization
-						   + dTh_ice * Constants::density_ice * Constants::lh_sublimation
-						  ) / sn_dt; // [w/m^3]
+			if (e<nE-1) {
+				// Only when not top layer. In the top layer, the energy has been accounted for in the energy balance
+				EMS[e].Qmm += ( dTh_water * Constants::density_water * Constants::lh_vaporization
+				              + dTh_ice * Constants::density_ice * Constants::lh_sublimation
+				              ) / sn_dt; // [w/m^3]
+			}
 
 			// If present at surface, surface hoar is sublimated away
 			if (e == nE-1 && deltaM[e]<0) {
@@ -426,7 +428,10 @@ void VapourTransport::LayerToLayer(const CurrentMeteo& Mdata, SnowStation& Xdata
 					EMS[e].theta[WATER] = ((1. - (EMS[e].theta[ICE] + EMS[e].theta[SOIL])) * (Constants::density_ice / Constants::density_water) - EMS[e].theta[WATER_PREF]);
 					prn_msg(__FILE__, __LINE__, "wrn", Date(), "FIXME! Not enough pore space in layer e=%zu from nE=%zu for condensation flux, estimated mass balance error: %f kg/m2", e, nE, EMS[e].L * (EMS[e].theta[WATER] - theta_w_in));
 				}
-				EMS[e].Qmm += (deltaM[e]*Constants::lh_vaporization)/sn_dt/EMS[e].L;	// [w/m^3]
+				if (e<nE-1) {
+					// Only when not top layer. In the top layer, the energy has been accounted for in the energy balance
+					EMS[e].Qmm += (deltaM[e]*Constants::lh_vaporization)/sn_dt/EMS[e].L;	// [w/m^3]
+				}
 				Sdata.mass[SurfaceFluxes::MS_EVAPORATION] += deltaM[e];
 			} else {
 				EMS[e].theta[ICE] += deltaM[e] / (Constants::density_ice * EMS[e].L);
@@ -436,7 +441,10 @@ void VapourTransport::LayerToLayer(const CurrentMeteo& Mdata, SnowStation& Xdata
 					EMS[e].theta[ICE] = -1.*((Constants::density_water / Constants::density_ice) * (EMS[e].theta[WATER] + EMS[e].theta[WATER_PREF]) + EMS[e].theta[SOIL] - 1.);
 					prn_msg(__FILE__, __LINE__, "wrn", Date(), "FIXME! Not enough pore space e=%zu from nE=%zu for deposition flux, estimated mass balance error: %f kg/m2", e, nE, EMS[e].L * (EMS[e].theta[ICE] - theta_i_in));
 				}
-				EMS[e].Qmm += (deltaM[e]*Constants::lh_sublimation)/sn_dt/EMS[e].L;	// [w/m^3]
+				if (e<nE-1) {
+					// Only when not top layer. In the top layer, the energy has been accounted for in the energy balance
+					EMS[e].Qmm += (deltaM[e]*Constants::lh_sublimation)/sn_dt/EMS[e].L;	// [w/m^3]
+				}
 				Sdata.mass[SurfaceFluxes::MS_SUBLIMATION] += deltaM[e];
 			}
 			EMS[e].theta[AIR] = std::max(0., 1.0 - EMS[e].theta[WATER] - EMS[e].theta[WATER_PREF] - EMS[e].theta[ICE] - EMS[e].theta[SOIL]);
