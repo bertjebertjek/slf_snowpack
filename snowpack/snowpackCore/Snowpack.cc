@@ -1089,7 +1089,11 @@ bool Snowpack::compTemperatureProfile(const CurrentMeteo& Mdata, SnowStation& Xd
 					if(mu.second < -Constants::eps2) {
 						Xdata.Edata[e].meltfreeze_tk = -1. * (sqrt(A * f * A * f * tmp_T * tmp_T + (2. * A * f * tmp_Theta - 2. * A * f * A * f * mu.first) * tmp_T + tmp_Theta * tmp_Theta - 2. * A * f * mu.first * tmp_Theta - 4. * A * f * mu.second * Xdata.Edata[e].salinity + A * f * A * f * mu.first * mu.first) - A * f * tmp_T - tmp_Theta - A * f * mu.first) / (2. * A * f);
 					} else {
-						Xdata.Edata[e].meltfreeze_tk = IOUtils::C_TO_K(0.);
+						if (BrineSal_new > 0.) {
+							Xdata.Edata[e].meltfreeze_tk = tmp_T;
+						} else {
+							Xdata.Edata[e].meltfreeze_tk = IOUtils::C_TO_K(0.);
+						}
 					}
 				}
 
