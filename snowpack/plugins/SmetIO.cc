@@ -952,7 +952,7 @@ std::string SmetIO::getFieldsHeader(const SnowStation& Xdata) const
 		os << "Qs Ql Qg TSG Qg0 Qr dIntEnergySnow meltFreezeEnergySnow ColdContentSnow" << " "; //Turbulent fluxes (W m-2)
 		// Heat flux at lower boundary (W m-2), ground surface temperature (degC),
 		// Heat flux at gound surface (W m-2), rain energy (W m-2)
-		// Internal energy change snow (W m-2), Melt freeze part of internal energy change snow (W m-2), Cold content of snow (MJ/kg)
+		// Internal energy change snow (kJ m-2), Melt freeze part of internal energy change snow (kJ m-2), Cold content of snow (MJ m-2)
 	if (out_lw)
 		os << "OLWR ILWR LWR_net" << " "; //Longwave radiation fluxes (W m-2)
 	if (out_sw)
@@ -1015,7 +1015,7 @@ void SmetIO::writeTimeSeriesHeader(const SnowStation& Xdata, const double& tz, s
 	if (out_heat) {
 		//"Qs Ql Qg TSG Qg0 Qr dIntEnergySnow meltFreezeEnergySnow ColdContentSnow"
 		plot_description << "sensible_heat  latent_heat  ground_heat  ground_temperature  ground_heat_at_soil_interface  rain_energy  snow_internal_energy_change  snow_melt_freeze_energy  snow_cold_content" << " ";
-		plot_units << "W/m2 W/m2 W/m2 K W/m2 W/m2 W/m2 W/m2 MJ/m2" << " ";
+		plot_units << "W/m2 W/m2 W/m2 K W/m2 W/m2 kJ/m2 kJ/m2 MJ/m2" << " ";
 		units_offset << "0 0 0 273.15 0 0 0 0 0" << " ";
 		units_multiplier << "1 1 1 1 1 1 1 1 1" << " ";
 		plot_color << "0x669933 0x66CC99 0xCC6600 0xDE22E2 0xFFCC00 0x6600FF 0x663300 0x996666 0xCC9966" << " ";
