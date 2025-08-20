@@ -142,6 +142,11 @@ https://snowpack.slf.ch
 		<parameter key="THRESH_DTEMP_AIR_SNOW" type="number" format="decimal" precision="1" unit="°C">
 			<help>If ENFORCE_MEASURED_SNOW_HEIGHTS, (TA-TSS)' threshold for precipitation to occur (default: 3.0°C)</help>
 		</parameter>
+			<parameter key="ALLOW_FREEZING_RAIN" type="alternative">
+			<option value="TRUE"><help>New snow elements during mixed precipitation are at air temperature or melting temperature, whichever is lower</help></option>
+			<option value="FALSE"><help>New snow elements during mixed precipitation are at melting temperature, irrespective of air temperature (default)</help></option>
+			<help>Only when mixed phase precipitation is provided: can the temperature of the rain be below freezing point (default: FALSE)</help>
+		</parameter>
 	</frame>
 
 	<frame caption="Hoar Handling" section="SnowpackAdvanced" collapsed="true">

@@ -49,6 +49,7 @@ bool SnowpackConfig::initStaticData()
 	advancedConfig["ALBEDO_PARAMETERIZATION"] = "LEHNING_2";
 	advancedConfig["ALBEDO_AVERAGE_SCHMUCKI"] = "ALL_DATA";
 	advancedConfig["ALBEDO_AGING"] = "true";
+	advancedConfig["ALLOW_FREEZING_RAIN"] = "true";
 	advancedConfig["COUPLEDPHASECHANGES"] = "false";
 	advancedConfig["ENABLE_VAPOUR_TRANSPORT"] = "false";
 	advancedConfig["ENHANCED_WIND_SLAB"] = "false";
