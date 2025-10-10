@@ -1154,6 +1154,7 @@ double SnLaws::newSnowDensityPara(const std::string& i_hn_model,
 		}else{
 			rho_hn = rho_t;
 		}
+		rho_hn = std::min(450., std::max(min_hn_density, rho_hn));
 
 	} else {
 		prn_msg(__FILE__, __LINE__, "err", Date(),
