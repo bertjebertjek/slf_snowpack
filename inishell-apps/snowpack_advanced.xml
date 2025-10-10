@@ -371,6 +371,7 @@ https://snowpack.slf.ch
 					<option value="PAHAUT"/>
 					<option value="NIED"/>
 					<option value="VANKAMPENHOUT"/>
+					<option value="KRAMPE"/>
 					<help>Choice of parameterizations for new snow density (statistical models, default: LEHNING_NEW)</help>
 				</parameter>
 			</option>
