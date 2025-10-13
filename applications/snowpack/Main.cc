@@ -90,9 +90,10 @@ class Cumsum {
 		Cumsum(const unsigned int nSlopes);
 
 		double precip;
-		double drift, snow, runoff, rain;
+		double snow, runoff, rain;
 		double dhs_corr, mass_corr; // inflate/deflate variables
 		vector<double> erosion; // Cumulated eroded mass; dumped to file as rate
+		vector<double> drift; // drifted snow per slope.sector
 };
 
 /************************************************************
@@ -199,7 +200,7 @@ void Slope::setSlope(const unsigned int slope_sequence, vector<SnowStation>& vec
 
 Cumsum::Cumsum(const unsigned int nSlopes)
         : precip(0.),
-          drift(0.), snow(0.), runoff(0.), rain(0.), dhs_corr(0.), mass_corr(0.),
+          drift(nSlopes, 0.), snow(0.), runoff(0.), rain(0.), dhs_corr(0.), mass_corr(0.),
           erosion(nSlopes, 0.)
 {}
 
@@ -643,7 +644,7 @@ inline void dataForCurrentTimeStep(CurrentMeteo& Mdata, SurfaceFluxes& surfFluxe
 			if (vecXdata[slope.luv].ErosionMass > 0.) {
 				// Hand over the luv eroded mass to the lee sector. set ErosionMass back to zero
 				vecXdata[slope.sector].RedistributionMass = vecXdata[slope.luv].ErosionMass;
-				vecXdata[slope.luv].ErosionMass = 0.;
+				vecXdata[slope.luv].ErosionMass = 0.;  /// Maybe not because it is needed for HNW in cumsum.erosion??
 			}
 		}
 		// Update depth of snowfall on slopes.
@@ -1273,7 +1274,7 @@ inline void real_main (int argc, char *argv[])
 						// Update drifting snow index (VI24),
 						//   from erosion at the main station only if no virtual slopes are available
 						if (slope.mainStationDriftIndex)
-							cumulate(cumsum.drift, surfFluxes.drift);
+							cumulate(cumsum.drift[slope.mainStation], surfFluxes.drift);
 						// Update erosion mass from main station
 						// NOTE cumsum.erosion[] will be positive in case of real erosion at any time during the output time step
 						if (vecXdata[slope.mainStation].ErosionMass > Constants::eps) {
@@ -1312,7 +1313,7 @@ inline void real_main (int argc, char *argv[])
 							qr_Hdata.at(i_hz).loc_for_wind = 1;
 						}
 						hazard.getHazardDataMainStation(qr_Hdata.at(i_hz), qr_Hdata_ind.at(i_hz),
-						                                sn_Zdata, cumsum.drift, slope.mainStationDriftIndex,
+						                                sn_Zdata, cumsum.drift[slope.mainStation], slope.mainStationDriftIndex,
 						                                vecXdata[slope.mainStation], Mdata, surfFluxes);
 						if (slope.nSlopes==1) { //only one slope, so set lwi_N and lwi_S to the same value
 							const double lwi = vecXdata[slope.mainStation].getLiquidWaterIndex();
@@ -1323,7 +1324,7 @@ inline void real_main (int argc, char *argv[])
 						}
 						mn_ctrl.HzStep++;
 						if (slope.mainStationDriftIndex)
-							cumsum.drift = 0.;
+							cumsum.drift[slope.mainStation] = 0.;
 						surfFluxes.hoar = 0.;
 						// Inflate/deflate sums
 						cumsum.dhs_corr += qr_Hdata.at(i_hz).dhs_corr;
@@ -1341,14 +1342,23 @@ inline void real_main (int argc, char *argv[])
 					if (slope.luvDriftIndex) {
 						// Update drifting snow index (VI24),
 						// considering only snow eroded from the windward slope
-						cumulate(cumsum.drift, surfFluxes.drift);
+						cumulate(cumsum.drift[slope.sector], surfFluxes.drift); // both these should have extra dimension of sze nslopes, and then only sum in that dimension. @TODO
+
+						// prn_msg(__FILE__, __LINE__, "msg", current_date,
+						// 		"sector %s, windward %s, luvdriftindex %s [ step %d]", 
+						// 		std::to_string(vecXdata[slope.sector].sector).c_str(), std::to_string(vecXdata[slope.sector].windward).c_str(), 
+						// 		std::to_string(slope.luvDriftIndex).c_str(),					        mn_ctrl.nStep);
+						// std::cout << "Size of cumsum.drift: " << sizeof(cumsum.drift) / sizeof(cumsum.drift[0]);
+						prn_msg(__FILE__, __LINE__, "msg", current_date, "sector %s, cumsum.drift[slope.sector] %s, surfFluxes.drift %s",std::to_string(vecXdata[slope.sector].sector).c_str(), 
+							to_string(cumsum.drift[slope.sector]).c_str(), to_string(surfFluxes.drift).c_str() );
 					}
 					if (mn_ctrl.HzDump) {
 						// NOTE qr_Hdata was first saved at the end of the mainStation simulation, at which time the drift index could not be dumped!
 						hazard.getHazardDataSlope(qr_Hdata.at(i_hz), qr_Hdata_ind.at(i_hz),
-						                          sn_Zdata.drift24, cumsum.drift, vecXdata[slope.sector],
+						                          sn_Zdata.drift24, cumsum.drift[slope.sector], vecXdata[slope.sector],
 						                          slope.luvDriftIndex, slope.north, slope.south);
-						if(slope.luvDriftIndex) cumsum.drift = 0.;
+						// if(slope.luvDriftIndex) cumsum.drift[slope.sector] = 0.; //note that luv changes constantly, so this does not work properly. Rather, we need to:
+						cumsum.drift.assign(cumsum.drift.size(), 0.); // but do we do it here or in line 1417?
 					}
 
 					// Update erosion mass from windward virtual slope
@@ -1363,7 +1373,9 @@ inline void real_main (int argc, char *argv[])
 					} else {
 						surfFluxes.mass[SurfaceFluxes::MS_RAIN] = cumsum.rain;
 						surfFluxes.mass[SurfaceFluxes::MS_HNW] = cumsum.snow;
-						// Add eroded snow from luv to precipitations on lee slope
+						// Add eroded snow from luv to precipitations on lee slope  !!! BUT IT HAS BEEN SET TO 0
+						if (cumsum.erosion[slope.luv] > Constants::eps) 
+							msg
 						if (slope.sector == slope.lee && cumsum.erosion[slope.luv] > Constants::eps)
 							surfFluxes.mass[SurfaceFluxes::MS_HNW] += cumsum.erosion[slope.luv] / vecXdata[slope.luv].cos_sl;
 					}
