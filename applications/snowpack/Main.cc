@@ -68,10 +68,12 @@ class Slope {
 		unsigned int first;        ///< first virtual slope station in computing sequence
 		unsigned int luv;
 		unsigned int lee;
+		unsigned int opposite;
 		bool north, south;
 		std::string snow_erosion;
 		bool mainStationDriftIndex;
 		bool luvDriftIndex;
+		vector<double> wind_trans24_vec; // actually store the 24 drift per sector, no all mixed up. Wankers :P
 
 		unsigned int getSectorDir(const double& dir_or_expo) const;
 		void setSlope(const unsigned int slope_sequence, vector<SnowStation>& vecXdata, double& wind_dir);
@@ -128,7 +130,7 @@ struct MainControl
 
 Slope::Slope(const mio::Config& cfg)
        : prevailing_wind_dir(0.), nSlopes(0), mainStation(0), sector(0),
-         first(1), luv(0), lee(0),
+         first(1), luv(0), lee(0), opposite(0),
          north(false), south(false),
          snow_erosion("NONE"), mainStationDriftIndex(false),
          luvDriftIndex(false),
@@ -138,6 +140,7 @@ Slope::Slope(const mio::Config& cfg)
 	snow_erosion = get_erosion(cfg); // Not convinced this should be stored in the Slope object, but ok. 
 	cfg.getValue("PREVAILING_WIND_DIR", "SnowpackAdvanced", prevailing_wind_dir, mio::IOUtils::nothrow);
 	sector_width = 360. / static_cast<double>(std::max((unsigned)1, nSlopes-1));
+	wind_trans24_vec.assign(nSlopes, 0.0);
 }
 
 /**
@@ -183,7 +186,7 @@ void Slope::setSlope(const unsigned int slope_sequence, vector<SnowStation>& vec
 			luv = lee = 0;
 		}
 		sector = mainStation;
-		mainStationDriftIndex = ((nSlopes == 1));
+		mainStationDriftIndex = true ; //((nSlopes == 1)); // always save main station drift index, since it is now computed for each slope separately BK 2025-10-14
 		break;
 	case 1:
 		sector = luv;
@@ -699,7 +702,7 @@ inline void getOutputControl(MainControl& mn_ctrl, const mio::Date& step, const 
 
 inline bool readSlopeMeta(mio::IOManager& io, SnowpackIO& snowpackio, SnowpackConfig& cfg, const size_t& i_stn,
                    Slope& slope, mio::Date &current_date, vector<SN_SNOWSOIL_DATA> &vecSSdata,
-                   vector<SnowStation> &vecXdata, ZwischenData &sn_Zdata, CurrentMeteo& Mdata)
+                   vector<SnowStation> &vecXdata, vector<ZwischenData> &vec_sn_Zdata, CurrentMeteo& Mdata)
 {
 	std::string snowfile;
 	stringstream ss;
@@ -720,7 +723,7 @@ inline bool readSlopeMeta(mio::IOManager& io, SnowpackIO& snowpackio, SnowpackCo
 						((pos_dot != string::npos) && (pos_slash == string::npos))) //so that the dot is not in a directory name
 						snowfile.erase(pos_dot, snowfile.size()-pos_dot);
 				}
-				snowpackio.readSnowCover(snowfile, vecStationIDs[i_stn], vecSSdata[slope.mainStation], sn_Zdata, (vecXdata[sector].Seaice!=NULL));
+				snowpackio.readSnowCover(snowfile, vecStationIDs[i_stn], vecSSdata[slope.mainStation], vec_sn_Zdata[slope.mainStation], (vecXdata[sector].Seaice!=NULL));
 				prn_msg(__FILE__, __LINE__, "msg-", mio::Date(), "Reading snow cover data for station %s",
 				        vecStationIDs[i_stn].c_str());
 				// Reading station meta data provided in meteo data and prebuffering those data
@@ -748,7 +751,7 @@ inline bool readSlopeMeta(mio::IOManager& io, SnowpackIO& snowpackio, SnowpackCo
 				sec_snowfile << snowfile << sector;
 				ss.str("");
 				ss << vecSSdata[slope.mainStation].meta.getStationID() << sector;
-				snowpackio.readSnowCover(sec_snowfile.str(), ss.str(), vecSSdata[sector], sn_Zdata, (vecXdata[sector].Seaice!=NULL));
+				snowpackio.readSnowCover(sec_snowfile.str(), ss.str(), vecSSdata[sector], vec_sn_Zdata[sector], (vecXdata[sector].Seaice!=NULL));
 				vecSSdata[sector].meta.position = vecSSdata[slope.mainStation].meta.getPosition();
 				vecSSdata[sector].meta.stationName = vecSSdata[slope.mainStation].meta.getStationName();
 				if (!current_date.isUndef()) vecSSdata[sector].profileDate = current_date; //this should have been set when processing the main station
@@ -1103,19 +1106,20 @@ inline void real_main (int argc, char *argv[])
 
 		Slope slope(cfg);
 		Cumsum cumsum(slope.nSlopes);
-
+	
 		double lw_in = Constants::undefined;    // Storage for LWin from flat field energy balance
 
 		// Used to scale wind for blowing and drifting snowpack (from statistical analysis)
 		double wind_scaling_factor = cfg.get("WIND_SCALING_FACTOR", "SnowpackAdvanced");
 
 		// Snowpack data (input/output)
-		ZwischenData sn_Zdata;   // "Memory"-data, required for every operational station
+		vector<ZwischenData> vec_sn_Zdata; // "Memory"-data, required for every operational station. Now as a vector to handle multiple vslopes individually.
 		vector<SN_SNOWSOIL_DATA> vecSSdata(slope.nSlopes, SN_SNOWSOIL_DATA(/*number_of_solutes*/));
 		vector<SnowStation> vecXdata;
 		for (size_t ii=0; ii<slope.nSlopes; ii++) { //fill vecXdata with *different* SnowStation objects
 			vecXdata.push_back( SnowStation(useCanopyModel, useSoilLayers, false /*Is A3d?*/, (variant=="SEAICE") ) );
 			if (vecXdata.back().Seaice != NULL) vecXdata[ii].Seaice->ConfigSeaIce(cfg);
+			vec_sn_Zdata.push_back( ZwischenData() );
 		}
 
 		// Create meteo data object to hold interpolated current time steps
@@ -1129,7 +1133,7 @@ inline void real_main (int argc, char *argv[])
 		meteoRead_timer.start();
 		if (mode == "OPERATIONAL")
 			cfg.addKey("PERP_TO_SLOPE", "SnowpackAdvanced", "false");
-		const bool read_slope_status = readSlopeMeta(io, snowpackio, cfg, i_stn, slope, current_date, vecSSdata, vecXdata, sn_Zdata, Mdata);
+		const bool read_slope_status = readSlopeMeta(io, snowpackio, cfg, i_stn, slope, current_date, vecSSdata, vecXdata, vec_sn_Zdata, Mdata);
 		meteoRead_timer.stop();
 		if (!read_slope_status) continue; //something went wrong, move to the next station
 
@@ -1155,7 +1159,7 @@ inline void real_main (int argc, char *argv[])
 		vector<ProcessInd> qr_Hdata_ind; //Hazard data Index for t=0...tn
 		const double duration = (dateEnd.getJulian() - current_date.getJulian() + 0.5/24)*24*3600; //HACK: why is it computed this way?
 		Hazard hazard(cfg, duration);
-		hazard.initializeHazard(sn_Zdata.drift24, vecXdata.at(0).meta.getSlopeAngle(), qr_Hdata, qr_Hdata_ind);
+		hazard.initializeHazard(vec_sn_Zdata.at(0).drift24, vecXdata.at(0).meta.getSlopeAngle(), qr_Hdata, qr_Hdata_ind);
 
 		prn_msg(__FILE__, __LINE__, "msg", mio::Date(), "Start simulation for %s on %s",
 			vecStationIDs[i_stn].c_str(), current_date.toString(mio::Date::ISO_TZ).c_str());
@@ -1313,8 +1317,11 @@ inline void real_main (int argc, char *argv[])
 							qr_Hdata.at(i_hz).loc_for_wind = 1;
 						}
 						hazard.getHazardDataMainStation(qr_Hdata.at(i_hz), qr_Hdata_ind.at(i_hz),
-						                                sn_Zdata, cumsum.drift[slope.mainStation], slope.mainStationDriftIndex,
+						                                vec_sn_Zdata[slope.sector], cumsum.drift[slope.mainStation], slope.mainStationDriftIndex,
 						                                vecXdata[slope.mainStation], Mdata, surfFluxes);
+						if(slope.mainStationDriftIndex){ //save slope-specific wind transport
+							slope.wind_trans24_vec[slope.mainStation] = qr_Hdata.at(i_hz).wind_trans24;	// always save main station drift index, since it is now computed for each slope separately BK 2025-10-14
+						} 
 						if (slope.nSlopes==1) { //only one slope, so set lwi_N and lwi_S to the same value
 							const double lwi = vecXdata[slope.mainStation].getLiquidWaterIndex();
 							if ((lwi < -Constants::eps) || (lwi >= 10.))
@@ -1337,28 +1344,25 @@ inline void real_main (int argc, char *argv[])
 						cumsum.rain += surfFluxes.mass[SurfaceFluxes::MS_RAIN];
 						cumsum.snow += surfFluxes.mass[SurfaceFluxes::MS_HNW];
 					}
-				} else {
+				} else { // virtual slope
 					const size_t i_hz = (mn_ctrl.HzStep > 0) ? mn_ctrl.HzStep-1 : 0;
 					if (slope.luvDriftIndex) {
 						// Update drifting snow index (VI24),
 						// considering only snow eroded from the windward slope
-						cumulate(cumsum.drift[slope.sector], surfFluxes.drift); // both these should have extra dimension of sze nslopes, and then only sum in that dimension. @TODO
-
-						// prn_msg(__FILE__, __LINE__, "msg", current_date,
-						// 		"sector %s, windward %s, luvdriftindex %s [ step %d]", 
-						// 		std::to_string(vecXdata[slope.sector].sector).c_str(), std::to_string(vecXdata[slope.sector].windward).c_str(), 
-						// 		std::to_string(slope.luvDriftIndex).c_str(),					        mn_ctrl.nStep);
-						// std::cout << "Size of cumsum.drift: " << sizeof(cumsum.drift) / sizeof(cumsum.drift[0]);
-						prn_msg(__FILE__, __LINE__, "msg", current_date, "sector %s, cumsum.drift[slope.sector] %s, surfFluxes.drift %s",std::to_string(vecXdata[slope.sector].sector).c_str(), 
-							to_string(cumsum.drift[slope.sector]).c_str(), to_string(surfFluxes.drift).c_str() );
+						cumulate(cumsum.drift[slope.sector], surfFluxes.drift);
 					}
 					if (mn_ctrl.HzDump) {
 						// NOTE qr_Hdata was first saved at the end of the mainStation simulation, at which time the drift index could not be dumped!
-						hazard.getHazardDataSlope(qr_Hdata.at(i_hz), qr_Hdata_ind.at(i_hz),
-						                          sn_Zdata.drift24, cumsum.drift[slope.sector], vecXdata[slope.sector],
-						                          slope.luvDriftIndex, slope.north, slope.south);
-						// if(slope.luvDriftIndex) cumsum.drift[slope.sector] = 0.; //note that luv changes constantly, so this does not work properly. Rather, we need to:
-						cumsum.drift.assign(cumsum.drift.size(), 0.); // but do we do it here or in line 1417?
+						hazard.getHazardDataSlope(	qr_Hdata.at(i_hz), qr_Hdata_ind.at(i_hz),
+												  	vec_sn_Zdata[slope.sector].drift24, cumsum.drift[slope.sector], vecXdata[slope.sector],
+													slope.luvDriftIndex, slope.north, slope.south);
+						// Note2: drift index calculated at each step for each slope. If not windward, cumsum.drift[] is 0. That way the old values get 'flushed out' even if the slope is not windward at the moment.
+						// Note 3: the we save the drift value to the lee slope, since that where the wind slab is deposited. BK 2025-10-14
+						slope.opposite = (slope.sector + slope.nSlopes/2) % (slope.nSlopes-1);
+						if (slope.opposite == 0) slope.opposite = slope.nSlopes-1; 
+						slope.wind_trans24_vec[slope.opposite] = qr_Hdata.at(i_hz).wind_trans24; //save wind transport to the lee slope
+
+						cumsum.drift.assign(cumsum.drift.size(), 0.); 
 					}
 
 					// Update erosion mass from windward virtual slope
@@ -1374,8 +1378,6 @@ inline void real_main (int argc, char *argv[])
 						surfFluxes.mass[SurfaceFluxes::MS_RAIN] = cumsum.rain;
 						surfFluxes.mass[SurfaceFluxes::MS_HNW] = cumsum.snow;
 						// Add eroded snow from luv to precipitations on lee slope  !!! BUT IT HAS BEEN SET TO 0
-						if (cumsum.erosion[slope.luv] > Constants::eps) 
-							msg
 						if (slope.sector == slope.lee && cumsum.erosion[slope.luv] > Constants::eps)
 							surfFluxes.mass[SurfaceFluxes::MS_HNW] += cumsum.erosion[slope.luv] / vecXdata[slope.luv].cos_sl;
 					}
@@ -1404,7 +1406,7 @@ inline void real_main (int argc, char *argv[])
 					tmpHdata.dhs_corr = cumsum.dhs_corr; cumsum.dhs_corr = 0.;	// overwrite the inflate/deflate variables
 					tmpHdata.mass_corr = cumsum.mass_corr; cumsum.mass_corr = 0.;
 					snowpackio.writeTimeSeries(vecXdata[slope.sector], surfFluxes, Mdata,
-					                           tmpHdata, wind_trans24);
+					                           tmpHdata,  slope.wind_trans24_vec[slope.sector]);
 
 					if (avgsum_time_series) {
 						surfFluxes.reset(cumsum_mass);
@@ -1430,7 +1432,7 @@ inline void real_main (int argc, char *argv[])
 					std::stringstream ss;
 					ss << vecStationIDs[i_stn];
 					if (slope.sector != slope.mainStation) ss << slope.sector;
-					snowpackio.writeSnowCover(current_date, vecXdata[slope.sector], sn_Zdata, true);
+					snowpackio.writeSnowCover(current_date, vecXdata[slope.sector], vec_sn_Zdata[slope.sector], true);
 					prn_msg(__FILE__, __LINE__, "msg", current_date,
 					        "Backup Xdata dumped for station %s [%.2f days, step %d]", ss.str().c_str(),
 					        (current_date.getJulian()
@@ -1457,7 +1459,7 @@ inline void real_main (int argc, char *argv[])
 		//   dump the PROFILEs (Xdata) for every station referred to as sector where sector 0 corresponds to the main station
 		if (computed_one_timestep && snow_write) {
 			for (size_t sector=slope.mainStation; sector<slope.nSlopes; sector++) {
-				snowpackio.writeSnowCover(current_date, vecXdata[sector], sn_Zdata);
+				snowpackio.writeSnowCover(current_date, vecXdata[sector], vec_sn_Zdata[slope.sector]);
 				if (sector == slope.mainStation) {
 					prn_msg(__FILE__, __LINE__, "msg", mio::Date(),
 					        "Writing data to sno file(s) for %s (station %s) on %s",

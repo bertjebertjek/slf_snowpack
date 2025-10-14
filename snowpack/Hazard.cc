@@ -518,8 +518,7 @@ void Hazard::getHazardDataSlope(ProcessDat& Hdata, ProcessInd& Hdata_ind,
 		                        std::vector<double>& drift24, const double& newDrift, const SnowStation& Xdata,
 		                        const bool luvDriftIndex, const bool north, const bool south)
 {
-	if (luvDriftIndex)
-		getDriftIndex(Hdata, Hdata_ind, drift24, newDrift, Xdata.cos_sl);
+	getDriftIndex(Hdata, Hdata_ind, drift24, newDrift, Xdata.cos_sl);
 	if (north) {
 		Hdata.lwi_N = Xdata.getLiquidWaterIndex();
 		if ((Hdata.lwi_N < -Constants::eps) || (Hdata.lwi_N >= 10.))
