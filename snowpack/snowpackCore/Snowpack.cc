@@ -1936,7 +1936,11 @@ void Snowpack::compSnowFall(CurrentMeteo& Mdata, SnowStation& Xdata, double& cum
 				const double absorbed_rainfall = theta_w_rain * Constants::density_water * EMS[e].L;
 				Sdata.mass[SurfaceFluxes::MS_RAIN] += absorbed_rainfall;
 				// Update the psum_ph
-				Mdata.psum_ph = (Mdata.psum * Mdata.psum_ph - absorbed_rainfall) / (Mdata.psum - absorbed_rainfall);
+				if (Mdata.psum - absorbed_rainfall < Constants::eps2) {
+					Mdata.psum_ph = 0.;
+				} else {
+					Mdata.psum_ph = (Mdata.psum * Mdata.psum_ph - absorbed_rainfall) / (Mdata.psum - absorbed_rainfall);
+				}
 				// Update psum
 				Mdata.psum -= absorbed_rainfall;
 				// To satisfy the energy balance, we should trigger an explicit treatment of the top boundary condition of the energy equation
