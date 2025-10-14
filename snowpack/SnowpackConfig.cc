@@ -62,6 +62,7 @@ bool SnowpackConfig::initStaticData()
 	advancedConfig["HN_DENSITY_FIXEDVALUE"] = "100.";
 	advancedConfig["HN_DENSITY_PARAMETERIZATION"] = "LEHNING_NEW";
 	advancedConfig["DENSITY_REDEPOSIT"] = "EVENT"; // The density to use in snowpack::redepositSnow. EVENT, PARAMETERIZED, or a value from hn_density_parameterization.
+	advancedConfig["WIND_SLAB_DENSITY"] = "77.";  // Predefined snow density (kg m-3) used to convert mass flux to drift index deposition depth (cm/24h)
 	advancedConfig["HOAR_DENSITY_BURIED"] = "125.";
 	advancedConfig["HOAR_DENSITY_SURF"] = "100.";
 	advancedConfig["HOAR_MIN_SIZE_BURIED"] = "2.";
