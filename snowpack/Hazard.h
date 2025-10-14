@@ -155,8 +155,8 @@ class Hazard {
 		void getHazardDataSlope(ProcessDat& Hdata, ProcessInd& Hdata_ind,
 		                        std::vector<double>& drift24, const double& newDrift, const SnowStation& Xdata,
 		                        const bool luvDriftIndex, const bool north, const bool south);
-
-		static const double typical_slope_length, wind_slab_density;
+		double wind_slab_density;
+		static const double typical_slope_length;
 		static const double minimum_drift, maximum_drift;
 
 	private:

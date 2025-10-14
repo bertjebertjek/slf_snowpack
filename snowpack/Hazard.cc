@@ -38,9 +38,6 @@ using namespace std;
 //Lee slope length (m) used to convert mass flux to drift index deposition depth (cm/24h)
 const double Hazard::typical_slope_length = 70.0;
 
-//Predefined snow density (kg m-3) used to convert mass flux to drift index deposition depth (cm/24h)
-const double Hazard::wind_slab_density = 77.0;
-
 //At least that mass flux (kg m-1 h-1) must have summed up for the drift index to be larger than 0.
 const double Hazard::minimum_drift = 0.0;
 
@@ -53,8 +50,9 @@ const double Hazard::maximum_drift = 5.0;
 
 Hazard::Hazard(const SnowpackConfig& cfg, const double duration)
         : research_mode(false), enforce_measured_snow_heights(false), force_rh_water(false),
-        nHz(0), hazard_steps_between(0), sn_dt(IOUtils::nodata),
-        hoar_density_surf(IOUtils::nodata), hoar_min_size_surf(IOUtils::nodata)
+        nHz(0), hazard_steps_between(0), sn_dt(IOUtils::nodata), 
+        hoar_density_surf(IOUtils::nodata), hoar_min_size_surf(IOUtils::nodata),
+		wind_slab_density(77.)
 
 {
 	/**
@@ -76,9 +74,10 @@ Hazard::Hazard(const SnowpackConfig& cfg, const double duration)
 	cfg.getValue("FORCE_RH_WATER", "SnowpackAdvanced", force_rh_water);
 	cfg.getValue("RESEARCH", "SnowpackAdvanced", research_mode);
 	//Density of surface hoar (-> hoar index of surface node) (kg m-3)
-	cfg.getValue("HOAR_DENSITY_SURF", "SnowpackAdvanced", hoar_density_surf);
+	cfg.getValue("HOAR_DENSITY_SURF", "SnowpackAdvanced", hoar_density_surf); //snow density (kg m-3) used to convert mass flux to drift index deposition depth (cm/24h)
 	//Minimum size to show surface hoar on surface (mm)
 	cfg.getValue("HOAR_MIN_SIZE_SURF", "SnowpackAdvanced", hoar_min_size_surf);
+	cfg.getValue("WIND_SLAB_DENSITY", "SnowpackAdvanced", wind_slab_density);
 
 	/*
 	* Hazard data interval in units of CALCULATION_STEP_LENGTH

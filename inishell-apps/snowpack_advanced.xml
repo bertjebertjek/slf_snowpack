@@ -392,7 +392,10 @@ https://snowpack.slf.ch
 			<option value="PARAMETERIZED"/>
 			<option value="a value of HN_DENSITY_PARAMETERIZATION"/>
 			<help> Specifies the density parameterization used for snow that is redistributed when SNOW_EROSION=REDEPOSIT (and in the future, SNOW_REDISTRIBUTION). EVENT uses the event-based scheme developed for Antartica (based on Groot Zwaaftink et al.: Event-driven deposition of snow on the Antarctic Plateau: analyzing field measurements with SNOWPACK https://doi.org/10.5194/tc-7-333-2013). PARAMETERIZED will use the same value of HN_DENSITY_PARAMETERIZATION, whereas picking another value from that list allows the user to have different density parameterizations for snowfall (HN_DENSITY_PARAMETERIZATION) and wind redeposition (DENSITY_REDEPOSIT) (default: EVENT).</help>
-
+		</parameter>
+		<parameter key="WIND_SLAB_DENSITY" type="number" format="decimal" precision="2">
+			<help>Predefined snow density (kg m-3) used to convert mass flux to drift index deposition depth (cm/24h) (default: 77 kg/m³)</help>
+		</parameter>
 		<parameter key="SNOW_ALBEDO" type="alternative" longlabel="true">
 			<option value="PARAMETERIZED">
 				<parameter key="ALBEDO_PARAMETERIZATION" type="alternative">

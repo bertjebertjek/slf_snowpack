@@ -1358,7 +1358,7 @@ inline void real_main (int argc, char *argv[])
 													slope.luvDriftIndex, slope.north, slope.south);
 						// Note2: drift index calculated at each step for each slope. If not windward, cumsum.drift[] is 0. That way the old values get 'flushed out' even if the slope is not windward at the moment.
 						// Note 3: the we save the drift value to the lee slope, since that where the wind slab is deposited. BK 2025-10-14
-						slope.opposite = (slope.sector + slope.nSlopes/2) % (slope.nSlopes-1);
+						slope.opposite = {(slope.sector + slope.nSlopes/2) % (slope.nSlopes-1)};
 						if (slope.opposite == 0) slope.opposite = slope.nSlopes-1; 
 						slope.wind_trans24_vec[slope.opposite] = qr_Hdata.at(i_hz).wind_trans24; //save wind transport to the lee slope
 
