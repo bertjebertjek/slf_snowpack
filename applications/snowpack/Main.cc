@@ -73,7 +73,7 @@ class Slope {
 		std::string snow_erosion;
 		bool mainStationDriftIndex;
 		bool luvDriftIndex;
-		vector<double> wind_trans24_vec; // actually store the 24 drift per sector, no all mixed up. Wankers :P
+		vector<double> wind_trans24_vec; // actually store the 24 drift per sector, no all mixed up.
 
 		unsigned int getSectorDir(const double& dir_or_expo) const;
 		void setSlope(const unsigned int slope_sequence, vector<SnowStation>& vecXdata, double& wind_dir);
@@ -1276,7 +1276,7 @@ inline void real_main (int argc, char *argv[])
 					}
 					if (slope.snow_erosion != "NONE") {
 						// Update drifting snow index (VI24),
-						//   from erosion at the main station only if no virtual slopes are available
+						//   from erosion at the main station only if no virtual slopes are available. 2025-10 edit: always calculate, since we now save an index per slope.
 						if (slope.mainStationDriftIndex)
 							cumulate(cumsum.drift[slope.mainStation], surfFluxes.drift);
 						// Update erosion mass from main station
@@ -1356,8 +1356,8 @@ inline void real_main (int argc, char *argv[])
 						hazard.getHazardDataSlope(	qr_Hdata.at(i_hz), qr_Hdata_ind.at(i_hz),
 												  	vec_sn_Zdata[slope.sector].drift24, cumsum.drift[slope.sector], vecXdata[slope.sector],
 													slope.luvDriftIndex, slope.north, slope.south);
-						// Note2: drift index calculated at each step for each slope. If not windward, cumsum.drift[] is 0. That way the old values get 'flushed out' even if the slope is not windward at the moment.
-						// Note 3: the we save the drift value to the lee slope, since that where the wind slab is deposited. BK 2025-10-14
+						// Note2: Drift index calculated at each step for each slope. If not windward, cumsum.drift[] is 0. That way the old values get 'flushed out' even if the slope is not windward at the moment.
+						// Note3: We save the drift value to the lee slope, since that where the wind slab is deposited. BK 2025-10-14
 						slope.opposite = {(slope.sector + slope.nSlopes/2) % (slope.nSlopes-1)};
 						if (slope.opposite == 0) slope.opposite = slope.nSlopes-1; 
 						slope.wind_trans24_vec[slope.opposite] = qr_Hdata.at(i_hz).wind_trans24; //save wind transport to the lee slope
