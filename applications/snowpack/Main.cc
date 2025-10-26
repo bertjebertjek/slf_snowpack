@@ -186,7 +186,7 @@ void Slope::setSlope(const unsigned int slope_sequence, vector<SnowStation>& vec
 			luv = lee = 0;
 		}
 		sector = mainStation;
-		mainStationDriftIndex = true ; //((nSlopes == 1)); // always save main station drift index, since it is now computed for each slope separately BK 2025-10-14
+		mainStationDriftIndex = ((nSlopes == 1)); // drift index only for main station if no virtual slopes
 		break;
 	case 1:
 		sector = luv;
@@ -1320,7 +1320,7 @@ inline void real_main (int argc, char *argv[])
 						                                vec_sn_Zdata[slope.sector], cumsum.drift[slope.mainStation], slope.mainStationDriftIndex,
 						                                vecXdata[slope.mainStation], Mdata, surfFluxes);
 						if(slope.mainStationDriftIndex){ //save slope-specific wind transport
-							slope.wind_trans24_vec[slope.mainStation] = qr_Hdata.at(i_hz).wind_trans24;	// always save main station drift index, since it is now computed for each slope separately BK 2025-10-14
+							slope.wind_trans24_vec[slope.mainStation] = qr_Hdata.at(i_hz).wind_trans24;
 						} 
 						if (slope.nSlopes==1) { //only one slope, so set lwi_N and lwi_S to the same value
 							const double lwi = vecXdata[slope.mainStation].getLiquidWaterIndex();
